@@ -153,11 +153,23 @@ After pushing your image to Artifact Registry, you can deploy it to Cloud Run.
 
 ### 1. Set up a Cloud SQL for PostgreSQL Instance
 
-Your application needs a PostgreSQL database. You can create a Cloud SQL for PostgreSQL instance by following the [Cloud SQL documentation](https://cloud.google.com/sql/docs/postgres/create-instance).
+Your application needs a PostgreSQL database. You can create a Cloud SQL for PostgreSQL instance by following the [Cloud SQL documentation](https://cloud.google.com/sql/docs/postgres/create-instance), or you can use the following `gcloud` command to create a small, inexpensive instance suitable for development and testing:
+
+```bash
+gcloud sql instances create [YOUR_INSTANCE_NAME] \
+    --database-version=POSTGRES_14 \
+    --tier=db-f1-micro \
+    --region=[YOUR_REGION] \
+    --storage-type=HDD \
+    --storage-size=10GB
+```
+
+Replace `[YOUR_INSTANCE_NAME]` and `[YOUR_REGION]` with your desired instance name and Google Cloud region. This command provisions the smallest, most cost-effective instance type.
 
 When you create the instance, make sure to:
 *   Note the **Connection name** of your instance. You will need it later.
 *   Create a user and a database.
+*   Set the password for the `postgres` user. You will be prompted to do so after the instance is created.
 
 ### 2. Deploy to Cloud Run
 
