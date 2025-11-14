@@ -135,6 +135,7 @@ export IMAGE_NAME="[YOUR_REGION]-docker.pkg.dev/[YOUR_PROJECT_ID]/[YOUR_REPOSITO
 
 # Build the image
 docker build -t ${IMAGE_NAME} .
+```
 
 **Note for cross-architecture builds (e.g., building on ARM for AMD64 deployment):**
 
@@ -145,7 +146,6 @@ docker build --platform linux/amd64 -t ${IMAGE_NAME} .
 ```
 
 This ensures the generated image is compatible with your deployment environment, preventing "exec format error" issues.
-```
 
 Make sure to replace `[YOUR_REGION]`, `[YOUR_PROJECT_ID]`, and `[YOUR_REPOSITORY_NAME]` with your actual values.
 
@@ -194,9 +194,8 @@ gcloud sql users create user --instance=[YOUR_INSTANCE_NAME] --password=[YOUR_DB
 
 Replace `[YOUR_INSTANCE_NAME]` and `[YOUR_DB_PASSWORD]` with your actual instance name and a secure password.
 
-### 3. Deploy to Cloud Run
 
-### 4. Initialize the Database Schema
+### 3. Initialize the Database Schema
 
 Unlike the local Docker setup, Cloud SQL does not automatically run the `init.sql` script. You must manually create the table schema.
 
@@ -226,6 +225,8 @@ Unlike the local Docker setup, Cloud SQL does not automatically run the `init.sq
     ```sql
     \q
     ```
+
+### 4. Deploy to Cloud Run
 
 Use the `gcloud run deploy` command to deploy your application. This command will create a new Cloud Run service or update an existing one.
 
