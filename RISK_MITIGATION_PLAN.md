@@ -40,6 +40,8 @@ This document outlines identified infrastructure and dependency risks for the `t
 
 9.  **CI/CD Infrastructure or Service Failure:** The current reliance on a single CI/CD provider (GitHub Actions) creates a single point of failure for the deployment pipeline. If GitHub Actions is unavailable, it may not be possible to deploy new versions of the application, even if the production infrastructure is healthy.
 
+10. **DDoS attacks or other security concerns:** The current setup has minimal protection against malicious traffic like Distributed Denial of Service (DDoS) attacks, SQL injection, or cross-site scripting (XSS). An attack could make the service unavailable or compromise user data.
+
 ---
 
 ### Proposed Mitigations for Remaining Risks
@@ -110,3 +112,13 @@ This section details the proposed solutions to address the outstanding risks ide
 *   **Local Deployment Scripts:** Create and maintain a set of well-documented local deployment scripts that can be run from a developer's machine. These scripts would perform the same actions as the CI/CD pipeline (e.g., build, push Docker image, update Kubernetes deployment).
 *   **Break-Glass Procedure:** Define a "break-glass" procedure that outlines the steps to take in the event of a CI/CD outage. This would include who is authorized to perform a manual deployment, what approvals are needed, and how to execute the local deployment scripts.
 *   **Multi-Provider CI/CD (Advanced):** For a more advanced solution, consider mirroring the CI/CD pipeline on a different provider (e.g., GitLab CI/CD, CircleCI). This would provide a fully redundant deployment path, but would also increase complexity and maintenance overhead.
+
+#### 8. Mitigating DDoS and Other Security Concerns
+
+**Proposal:** Implement a layered security approach using cloud-native services and application-level hardening.
+
+**Details:**
+*   **Web Application Firewall (WAF):** Use a WAF service like Google Cloud Armor to protect against common web exploits and DDoS attacks. Cloud Armor can be integrated with the Global External Load Balancer to provide rate limiting, IP-based blocking, and protection against OWASP Top 10 vulnerabilities.
+*   **Input Validation and Sanitization:** Strengthen the application code to perform strict input validation on all user-supplied data to prevent injection attacks. Use prepared statements for all database queries (which is already being done) to prevent SQL injection.
+*   **Content Security Policy (CSP):** Implement a strict Content Security Policy to mitigate the risk of cross-site scripting (XSS) and other code injection attacks.
+*   **Regular Security Scanning:** Integrate automated security scanning tools into the CI/CD pipeline. This includes static application security testing (SAST) to find vulnerabilities in the source code and dynamic application security testing (DAST) to scan the running application for vulnerabilities.
