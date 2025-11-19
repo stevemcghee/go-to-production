@@ -34,6 +34,10 @@ This document outlines identified infrastructure and dependency risks for the `t
 
 6.  **Insecure and Inflexible Configuration:** Database credentials are still managed via environment variables and `.env` files, which is not secure for production.
 
+7.  **Compute Service or Regional Failure within GCP:** The proposed single-region deployment is vulnerable to failures affecting all zones within that region, such as network partitions, power outages, or natural disasters.
+
+8.  **Total GCP Failure or Multi-Region Outage:** While rare, a catastrophic event could disrupt GCP services across multiple regions, or a misconfiguration could propagate globally, making the application inaccessible.
+
 ---
 
 ### Proposed Mitigations for Remaining Risks
@@ -77,3 +81,21 @@ This section details the proposed solutions to address the outstanding risks ide
 *   **Secrets Management:** Instead of storing the database password in `.env` files or Kubernetes Secrets directly, it will be stored in Google Secret Manager.
 *   **Workload Identity:** The GKE cluster will be configured with Workload Identity, which allows Kubernetes service accounts to impersonate Google service accounts. The application pod will be assigned a Kubernetes service account that has permission to access the secret in Secret Manager.
 *   **Dynamic Configuration:** The application will be modified to fetch the database password from Secret Manager at runtime. This eliminates the need to store secrets in source code or configuration files, improving security and making configuration changes easier to manage.
+
+#### 5. Mitigating GCP Service or Regional Failure
+
+**Proposal:** Implement a multi-region deployment strategy for the application and database.
+
+**Details:**
+*   **Multi-Region GKE Deployment:** Deploy a GKE cluster in a secondary region (e.g., `us-west1`). This provides an independent environment to fail over to.
+*   **Global Load Balancing:** Use a Google Cloud Global External Load Balancer with multiple backend services, one for each regional GKE cluster. The load balancer can be configured with health checks to automatically direct traffic away from an unhealthy region to the healthy one, providing seamless failover for users.
+*   **Cross-Region Database Replication:** Configure the Cloud SQL for PostgreSQL instance with a cross-region read replica in the secondary region. In the event of a primary region failure, this replica can be manually or automatically promoted to a standalone, writable instance.
+
+#### 6. Mitigating Total GCP Failure
+
+**Proposal:** Implement a multi-cloud deployment strategy, with a secondary deployment on a different cloud provider (e.g., Amazon Web Services - AWS).
+
+**Details:**
+*   **Multi-Cloud Architecture:** Replicate the production infrastructure on AWS using services like Amazon EKS (Elastic Kubernetes Service) for container orchestration and Amazon RDS for PostgreSQL as the database. Infrastructure as Code (IaC) tools like Terraform can be used to manage deployments across both clouds.
+*   **DNS-Based Failover:** Use a DNS provider with health checking and failover capabilities (e.g., Amazon Route 53, Cloudflare DNS). Configure DNS records to point to both the GCP and AWS deployments. If the primary cloud provider (GCP) becomes unavailable, DNS can automatically redirect traffic to the secondary deployment on AWS.
+*   **Data Synchronization:** Implement a data synchronization mechanism between the GCP and AWS databases. This could involve regular backups and restores, or more advanced asynchronous replication strategies, depending on the Recovery Time Objective (RTO) and Recovery Point Objective (RPO) requirements.
