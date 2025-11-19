@@ -20,3 +20,8 @@ output "cloudsql_instance_connection_name" {
   description = "The connection name of the Cloud SQL instance"
   value       = google_sql_database_instance.main_instance.connection_name
 }
+
+output "github_actions_deployer_email" {
+  description = "The email address of the service account for GitHub Actions"
+  value       = google_service_account.github_actions_deployer.email
+}
