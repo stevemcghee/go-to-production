@@ -63,6 +63,10 @@ jobs:
         project_id: ${{ vars.GCP_PROJECT_ID }}
 
     - name: Apply Kubernetes manifests
+      env:
+        IMAGE_NAME: todo-app-go
+        IMAGE_TAG: ${{ github.sha }}
+        GCR_HOSTNAME: ${{ vars.GCR_HOSTNAME }}
       run: |
         # Replace placeholders in the deployment manifest
         sed -i 's|"gcr.io/${PROJECT_ID}/todo-app-go:latest"|"'"$GCR_HOSTNAME/$GCP_PROJECT/todo-app-go/$IMAGE_NAME:$IMAGE_TAG"'"|g' k8s/deployment.yaml
