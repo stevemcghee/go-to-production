@@ -10,4 +10,9 @@
 .vscode/
 
 # Go module cache
-# vendor/
+vendor/
+terraform/.terraform/
+*.tfvars
+
+.vscode/
+terraform/gcp-sa-key.json
