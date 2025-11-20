@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: todo-app-go
-        image: gcr.io/${PROJECT_ID}/todo-app-go:latest
+        image: "gcr.io/${PROJECT_ID}/todo-app-go:latest"
         ports:
         - containerPort: 8080
         env:
