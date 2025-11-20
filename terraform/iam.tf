@@ -1,12 +1,5 @@
 # terraform/iam.tf
 
-# Ensure the default GCE service account is enabled, as it's needed by GKE
-resource "google_project_service_identity" "gce_service_account" {
-  provider = google-beta
-  project  = var.project_id
-  service  = "compute.googleapis.com"
-}
-
 # Service Account for GitHub Actions CI/CD
 resource "google_service_account" "github_actions_deployer" {
   account_id   = "github-actions-deployer"
