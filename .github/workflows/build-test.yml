@@ -67,8 +67,12 @@ jobs:
         IMAGE_NAME: todo-app-go
         IMAGE_TAG: ${{ github.sha }}
         GCR_HOSTNAME: ${{ vars.GCR_HOSTNAME }}
+        FULL_IMAGE: ${{ vars.GCR_HOSTNAME }}/${{ env.GCP_PROJECT }}/todo-app-go/todo-app-go:${{ github.sha }}
       run: |
         # Replace placeholders in the deployment manifest
+        echo "Replacing image with: $GCR_HOSTNAME/$GCP_PROJECT/todo-app-go/$IMAGE_NAME:$IMAGE_TAG"
         sed -i 's|"gcr.io/${PROJECT_ID}/todo-app-go:latest"|"'"$GCR_HOSTNAME/$GCP_PROJECT/todo-app-go/$IMAGE_NAME:$IMAGE_TAG"'"|g' k8s/deployment.yaml
         sed -i "s|\${INSTANCE_CONNECTION_NAME}|${{ vars.GKE_SQL_INSTANCE_CONNECTION_NAME }}|g" k8s/deployment.yaml
+        echo "Deployment after sed:"
+        grep "image:" k8s/deployment.yaml
         kubectl apply -f k8s/
