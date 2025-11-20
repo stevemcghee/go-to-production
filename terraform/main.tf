@@ -135,7 +135,6 @@ resource "google_sql_database" "database" {
 resource "google_sql_user" "users" {
   name     = var.db_user
   instance = google_sql_database_instance.main_instance.name
-  host     = "%" # Allow connections from any host (for simplicity, should be restricted in production)
   password = var.db_password
 }
 
