@@ -42,6 +42,13 @@ spec:
             port: 8080
           initialDelaySeconds: 5
           periodSeconds: 5
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
       - name: cloudsql-proxy
         image: gcr.io/cloudsql-docker/gce-proxy:1.17
         command:
@@ -51,5 +58,5 @@ spec:
           runAsNonRoot: true
         resources:
           requests:
-            memory: "2Gi"
-            cpu: "1"
+            memory: "256Mi"
+            cpu: "100m"
