@@ -75,24 +75,24 @@ def analyze_branches(branches):
 
 def main():
     main_stats = analyze_main()
-    # Exclude ha-scalability-hardening since it has no changes yet
-    branches = ["feature/gke-base-deployment", "feature/risk-mitigation"]
-    branch_stats = analyze_branches(branches)
+    # Only analyze gke-base-deployment (risk-mitigation is an earlier parallel branch)
+    gke_base_stats = analyze_branches(["feature/gke-base-deployment"])
     
     # Calculate cumulative totals
-    cumulative_stats = {"main": main_stats}
+    cumulative_stats = {}
     
-    for branch in branches:
-        # Start with main's totals
-        cumulative = dict(main_stats)
-        # Apply this branch's changes (added - deleted) to main's totals
-        for cat, changes in branch_stats.get(branch, {}).items():
-            cumulative[cat] = cumulative.get(cat, 0) + changes['added'] - changes['deleted']
-        cumulative_stats[branch] = cumulative
+    # Main baseline
+    cumulative_stats["main"] = main_stats
+    
+    # GKE Base = Main + gke-base changes
+    gke_cumulative = dict(main_stats)
+    for cat, changes in gke_base_stats.get("feature/gke-base-deployment", {}).items():
+        gke_cumulative[cat] = gke_cumulative.get(cat, 0) + changes['added'] - changes['deleted']
+    cumulative_stats["feature/gke-base-deployment"] = gke_cumulative
     
     report = {
         "main": main_stats,
-        "branches_delta": branch_stats,
+        "branches_delta": gke_base_stats,
         "cumulative": cumulative_stats
     }
     
@@ -105,13 +105,13 @@ def generate_chart(report):
         import matplotlib.pyplot as plt
         import numpy as np
         
-        # Use cumulative data for the chart - show progression: main -> base -> risk
-        branch_order = ["main", "feature/gke-base-deployment", "feature/risk-mitigation"]
+        # Use cumulative data for the chart - show progression: main -> gke-base
+        branch_order = ["main", "feature/gke-base-deployment"]
         data = {k: report['cumulative'][k] for k in branch_order}
         
         branches = list(data.keys())
         # Rename for display
-        branch_labels = ["Main", "GKE Base", "Risk Mitigation"]
+        branch_labels = ["Main", "GKE Base Deployment"]
         categories = sorted(list({k for b in data.values() for k in b.keys()}))
         
         if not categories:
