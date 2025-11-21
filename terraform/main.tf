@@ -51,6 +51,12 @@ resource "google_project_service" "artifactregistry_api" {
   disable_on_destroy = false
 }
 
+resource "google_project_service" "logging_api" {
+  project = var.project_id
+  service = "logging.googleapis.com"
+  disable_on_destroy = false
+}
+
 # Create a GKE cluster
 resource "google_container_cluster" "primary" {
   name                     = var.cluster_name
