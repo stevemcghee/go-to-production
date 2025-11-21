@@ -59,11 +59,15 @@ def analyze_branches(branches):
                 parts = line.split()
                 if len(parts) < 3: continue
                 added = int(parts[0]) if parts[0] != '-' else 0
-                # deleted = int(parts[1]) if parts[1] != '-' else 0
+                deleted = int(parts[1]) if parts[1] != '-' else 0
                 filename = " ".join(parts[2:])
                 
                 cat = get_category(filename)
-                stats[cat] = stats.get(cat, 0) + added
+                # Store net change for now, we will calculate total later
+                if cat not in stats:
+                    stats[cat] = {'added': 0, 'deleted': 0}
+                stats[cat]['added'] += added
+                stats[cat]['deleted'] += deleted
             branch_stats[branch] = stats
         except Exception as e:
             print(f"Error analyzing branch {branch}: {e}")
@@ -72,12 +76,26 @@ def analyze_branches(branches):
 def main():
     main_stats = analyze_main()
     branches = ["feature/gke-base-deployment", "feature/ha-scalability-hardening", "feature/risk-mitigation"]
-    branch_stats = analyze_branches(branches)
+    branch_diffs = analyze_branches(branches)
     
+    # Calculate totals
     report = {
         "main": main_stats,
-        "branches": branch_stats
+        "branches": {}
     }
+    
+    for branch, diffs in branch_diffs.items():
+        # Start with main stats
+        total_stats = main_stats.copy()
+        has_changes = False
+        for cat, changes in diffs.items():
+            if changes['added'] > 0 or changes['deleted'] > 0:
+                has_changes = True
+            total_stats[cat] = total_stats.get(cat, 0) + changes['added'] - changes['deleted']
+        
+        # Only add branch if it has changes
+        if has_changes:
+            report['branches'][branch] = total_stats
     
     print(json.dumps(report, indent=2))
     
@@ -88,11 +106,9 @@ def generate_chart(report):
         import matplotlib.pyplot as plt
         import numpy as np
         
-        # Combine main and branches, filtering out empty ones
+        # Prepare data: Main + Branches
         data = {'main': report['main']}
-        for name, stats in report['branches'].items():
-            if stats and sum(stats.values()) > 0:
-                data[name] = stats
+        data.update(report['branches'])
         
         branches = list(data.keys())
         categories = sorted(list({k for b in data.values() for k in b.keys()}))
@@ -111,9 +127,9 @@ def generate_chart(report):
             offset = width * i
             rects = ax.bar(x + offset, vals, width, label=cat)
             
-        ax.set_ylabel('Added Lines of Code (Log Scale)')
+        ax.set_ylabel('Total Lines of Code (Log Scale)')
         ax.set_yscale('log')
-        ax.set_title('Code Additions by Branch and Category')
+        ax.set_title('Total Code Size by Branch and Category')
         ax.set_xticks(x + width * (len(categories) - 1) / 2)
         ax.set_xticklabels(branches, rotation=15, ha='right')
         ax.legend()
