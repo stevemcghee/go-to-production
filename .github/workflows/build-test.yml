@@ -48,8 +48,8 @@ jobs:
         GCR_HOSTNAME: ${{ vars.GCR_HOSTNAME }}
         GCP_PROJECT_ID: ${{ steps.auth.outputs.project_id }}
       run: |
-        docker build -t $GCR_HOSTNAME/$GCP_PROJECT_ID/$IMAGE_NAME:$IMAGE_TAG .
-        docker push $GCR_HOSTNAME/$GCP_PROJECT_ID/$IMAGE_NAME:$IMAGE_TAG
+        docker build -t $GCR_HOSTNAME/$GCP_PROJECT_ID/todo-app-go/$IMAGE_NAME:$IMAGE_TAG .
+        docker push $GCR_HOSTNAME/$GCP_PROJECT_ID/todo-app-go/$IMAGE_NAME:$IMAGE_TAG
 
     - name: Install kubectl
       uses: azure/setup-kubectl@v3 # Using Azure's action as it's common and reliable
@@ -64,6 +64,6 @@ jobs:
     - name: Apply Kubernetes manifests
       run: |
         # Replace placeholders in the deployment manifest
-        sed -i "s|gcr.io/${PROJECT_ID}/todo-app-go:latest|$GCR_HOSTNAME/$GCP_PROJECT_ID/$IMAGE_NAME:$IMAGE_TAG|g" k8s/deployment.yaml
+        sed -i "s|gcr.io/${PROJECT_ID}/todo-app-go:latest|$GCR_HOSTNAME/$GCP_PROJECT_ID/todo-app-go/$IMAGE_NAME:$IMAGE_TAG|g" k8s/deployment.yaml
         sed -i "s|\${INSTANCE_CONNECTION_NAME}|${{ vars.GKE_SQL_INSTANCE_CONNECTION_NAME }}|g" k8s/deployment.yaml
         kubectl apply -f k8s/
