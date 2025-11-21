@@ -75,7 +75,8 @@ def analyze_branches(branches):
 
 def main():
     main_stats = analyze_main()
-    branches = ["feature/gke-base-deployment", "feature/ha-scalability-hardening", "feature/risk-mitigation"]
+    # Exclude ha-scalability-hardening since it has no changes yet
+    branches = ["feature/gke-base-deployment", "feature/risk-mitigation"]
     branch_stats = analyze_branches(branches)
     
     # Calculate cumulative totals
@@ -104,10 +105,13 @@ def generate_chart(report):
         import matplotlib.pyplot as plt
         import numpy as np
         
-        # Use cumulative data for the chart
-        data = report['cumulative']
+        # Use cumulative data for the chart - show progression: main -> base -> risk
+        branch_order = ["main", "feature/gke-base-deployment", "feature/risk-mitigation"]
+        data = {k: report['cumulative'][k] for k in branch_order}
         
         branches = list(data.keys())
+        # Rename for display
+        branch_labels = ["Main", "GKE Base", "Risk Mitigation"]
         categories = sorted(list({k for b in data.values() for k in b.keys()}))
         
         if not categories:
@@ -115,24 +119,32 @@ def generate_chart(report):
             return
 
         x = np.arange(len(branches))
-        width = 0.8 / len(categories)
         
-        fig, ax = plt.subplots(figsize=(12, 6))
+        fig, ax = plt.subplots(figsize=(12, 7))
+        
+        # Create stacked bar chart
+        bottom = np.zeros(len(branches))
+        colors = plt.cm.Set3(np.linspace(0, 1, len(categories)))
         
         for i, cat in enumerate(categories):
             vals = [data[b].get(cat, 0) for b in branches]
-            offset = width * i
-            rects = ax.bar(x + offset, vals, width, label=cat)
+            ax.bar(x, vals, label=cat, bottom=bottom, color=colors[i])
+            bottom += vals
             
-        ax.set_ylabel('Total Lines of Code')
-        # ax.set_yscale('log')
-        ax.set_title('Total Code Size by Branch and Category')
-        ax.set_xticks(x + width * (len(categories) - 1) / 2)
-        ax.set_xticklabels(branches, rotation=15, ha='right')
-        ax.legend()
+        ax.set_ylabel('Total Lines of Code', fontsize=12)
+        ax.set_title('Cumulative Code Growth Across Branches', fontsize=14, fontweight='bold')
+        ax.set_xticks(x)
+        ax.set_xticklabels(branch_labels, fontsize=11)
+        ax.legend(loc='upper left', fontsize=10)
+        ax.grid(axis='y', alpha=0.3)
+        
+        # Add total labels on top of each bar
+        for i, branch in enumerate(branches):
+            total = sum(data[branch].values())
+            ax.text(i, total, f'{total:,}', ha='center', va='bottom', fontweight='bold', fontsize=10)
         
         plt.tight_layout()
-        plt.savefig('branch_comparison.png')
+        plt.savefig('branch_comparison.png', dpi=150)
         print("Chart saved to branch_comparison.png")
         
     except ImportError:

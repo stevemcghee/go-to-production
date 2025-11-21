@@ -52,20 +52,6 @@ This analysis tracks the evolution of the codebase across branches, showing cumu
 - Database initialization scripts and documentation
 - Doubled documentation with setup guides
 
-### feature/ha-scalability-hardening
-| Category | Lines | Change from Main |
-|----------|-------|------------------|
-| Application Code | 392 | 0 |
-| Documentation | 348 | 0 |
-| Other | 178 | 0 |
-| CI/CD | 69 | 0 |
-| IaC | 64 | 0 |
-| Config | 29 | 0 |
-| Database | 9 | 0 |
-| **TOTAL** | **1,089** | **0** |
-
-**Status:** No changes yet (branch exists but empty)
-
 ### feature/risk-mitigation
 | Category | Lines | Change from Main |
 |----------|-------|------------------|
@@ -87,8 +73,13 @@ This analysis tracks the evolution of the codebase across branches, showing cumu
 
 ![Code Distribution by Branch](branch_comparison.png)
 
-The chart shows the cumulative line count distribution across all code categories for each branch.
+The stacked bar chart shows the cumulative growth of code across branches: Main → GKE Base → Risk Mitigation. Each segment represents a code category, and the total height shows the complete line count for that stage.
 
 ## Summary
 
-The repository has grown from **1,089 lines** (main) to **5,452 lines** in the GKE deployment branch, representing a **400% increase** primarily driven by infrastructure code. This reflects the transition from a simple local Docker setup to a production-ready GKE deployment with comprehensive IaC, CI/CD, and documentation.
+The repository has evolved through distinct phases:
+1. **Main** (1,089 lines): Simple Docker-based local development setup
+2. **GKE Base** (5,452 lines): Production GKE deployment with full IaC (+400% growth)
+3. **Risk Mitigation** (1,662 lines): Security and monitoring enhancements
+
+The most significant growth occurred in the GKE deployment phase, driven primarily by infrastructure code (Terraform + Kubernetes manifests) which grew from 64 to 3,571 lines.
