@@ -7,6 +7,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log/slog" // Import slog
 	"net/http"
 	"net/url"
@@ -28,9 +29,22 @@ type Todo struct {
 var db *sql.DB
 
 func main() {
+	// Immediate raw output to verify stdout is working
+	fmt.Println("Raw stdout: Application starting...")
+
 	// Initialize a structured logger
-	jsonHandler := slog.NewJSONHandler(os.Stdout, nil)
+	jsonHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
 	slog.SetDefault(slog.New(jsonHandler))
+
+	// Panic recovery
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("Application panicked", "panic", r)
+			os.Exit(1)
+		}
+	}()
+
+	slog.Info("Logger initialized")
 
 	var err error
 	dbURL := os.Getenv("DATABASE_URL")
@@ -60,14 +74,18 @@ func main() {
 	}
 
 
+	slog.Info("Attempting to connect to database", "attempts", 5)
 	for i := 0; i < 5; i++ {
+		slog.Info("Opening database connection", "attempt", i+1)
 		db, err = sql.Open("postgres", dbURL)
 		if err == nil {
+			slog.Info("Pinging database", "attempt", i+1)
 			if err = db.Ping(); err == nil {
+				slog.Info("Successfully connected to database")
 				break
 			}
 		}
-		slog.Warn("Could not connect to database, retrying in 2 seconds...", "error", err)
+		slog.Warn("Could not connect to database, retrying in 2 seconds...", "error", err, "attempt", i+1)
 		time.Sleep(2 * time.Second)
 	}
 
@@ -89,10 +107,16 @@ func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
+		slog.Info("PORT environment variable not set, defaulting to 8080")
+	} else {
+		slog.Info("PORT environment variable set", "port", port)
 	}
 
 	slog.Info("Server starting", "port", port)
-	slog.Error("Server stopped", "error", http.ListenAndServe(":"+port, nil))
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		slog.Error("Server stopped unexpectedly", "error", err)
+		os.Exit(1)
+	}
 }
 
 func healthzHandler(w http.ResponseWriter, r *http.Request) {
