@@ -160,6 +160,10 @@ resource "google_sql_database_instance" "main_instance" {
       enabled            = true
       start_time         = "03:00"
     }
+    database_flags {
+      name  = "cloudsql.iam_authentication"
+      value = "on"
+    }
     maintenance_window {
       day  = 7
       hour = 3

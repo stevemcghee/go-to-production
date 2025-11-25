@@ -14,9 +14,10 @@ spec:
       labels:
         app: todo-app-go
     spec:
+      serviceAccountName: todo-app-sa
       containers:
       - name: todo-app-go
-        image: "us-central1-docker.pkg.dev/smcghee-todo-p15n-38a6/todo-app-go/todo-app-go:f4e9863fd10494be3629e83e6434b7586dad9964"
+        image: "us-central1-docker.pkg.dev/smcghee-todo-p15n-38a6/todo-app-go/todo-app-go:iam-auth-v1"
         resources:
           requests:
             cpu: "100m"
@@ -68,10 +69,11 @@ spec:
             memory: "256Mi"
             cpu: "500m"
       - name: cloudsql-proxy
-        image: gcr.io/cloudsql-docker/gce-proxy:1.17
-        command:
-          - "/cloud_sql_proxy"
-          - "-instances=smcghee-todo-p15n-38a6:us-central1:todo-app-db-instance=tcp:5432"
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
+        args:
+          - "--structured-logs"
+          - "--auto-iam-authn"
+          - "smcghee-todo-p15n-38a6:us-central1:todo-app-db-instance"
         securityContext:
           runAsNonRoot: true
         resources:

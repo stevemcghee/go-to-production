@@ -76,6 +76,13 @@ resource "google_project_iam_member" "sql_client" {
   member  = "serviceAccount:${google_service_account.todo_app_sa.email}"
 }
 
+# Grant Cloud SQL Instance User role for IAM authentication
+resource "google_project_iam_member" "sql_instance_user" {
+  project = var.project_id
+  role    = "roles/cloudsql.instanceUser"
+  member  = "serviceAccount:${google_service_account.todo_app_sa.email}"
+}
+
 # Bind the Kubernetes Service Account to the Google Service Account
 resource "google_service_account_iam_member" "workload_identity_binding" {
   service_account_id = google_service_account.todo_app_sa.name

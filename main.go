@@ -5,7 +5,6 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -15,8 +14,6 @@ import (
 	"strconv"
 	"time"
 
-	secretmanager "cloud.google.com/go/secretmanager/apiv1"   // Added for Secret Manager
-	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb" // Added for Secret Manager
 	_ "github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -84,47 +81,19 @@ func main() {
 func initDB() {
 	var err error
 
-	// Fetch password from Secret Manager
-	ctx := context.Background()
-	client, err := secretmanager.NewClient(ctx)
-	if err != nil {
-		slog.Error("failed to setup secretmanager client", "error", err)
-		os.Exit(1)
-	}
-	defer client.Close()
-
-	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
-	if projectID == "" {
-		slog.Error("GOOGLE_CLOUD_PROJECT env var not set")
-		os.Exit(1)
-	}
-
-	// Build the secret name
-	// Format: projects/{project}/secrets/{secret}/versions/{version}
-	name := fmt.Sprintf("projects/%s/secrets/db-password/versions/latest", projectID)
-
-	req := &secretmanagerpb.AccessSecretVersionRequest{
-		Name: name,
-	}
-
-	result, err := client.AccessSecretVersion(ctx, req)
-	if err != nil {
-		slog.Error("failed to access secret version", "error", err)
-		os.Exit(1)
-	}
-
-	password := string(result.Payload.Data)
-
-	dbUser := os.Getenv("DB_USER")
+	// Use Cloud SQL IAM authentication
+	// The username is the service account email
+	dbUser := "todo-app-sa@smcghee-todo-p15n-38a6.iam"
 	dbName := os.Getenv("DB_NAME")
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
 
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", dbUser, password, dbHost, dbPort, dbName)
+	// For IAM authentication, no password is needed
+	// The Cloud SQL Proxy handles authentication via Workload Identity
+	connStr := fmt.Sprintf("postgres://%s@%s:%s/%s?sslmode=disable", dbUser, dbHost, dbPort, dbName)
 
-	// Log the connection string without password for debugging
-	safeConnStr := fmt.Sprintf("postgres://%s:xxxxx@%s:%s/%s?sslmode=disable", dbUser, dbHost, dbPort, dbName)
-	slog.Info("Connecting to database", "url", safeConnStr)
+	// Log the connection string (safe since no password)
+	slog.Info("Connecting to database with IAM auth", "url", connStr)
 
 	slog.Info("Attempting to connect to database", "attempts", 5)
 	for i := 0; i < 5; i++ {

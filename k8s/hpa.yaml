@@ -6,7 +6,7 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: todo-app
+    name: todo-app-go
   minReplicas: 2
   maxReplicas: 10
   metrics:

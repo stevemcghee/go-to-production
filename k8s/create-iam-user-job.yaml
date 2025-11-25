@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-iam-user
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: create-user
+        image: postgres:15-alpine
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Waiting for Cloud SQL Proxy..."
+          sleep 5
+          echo "Creating IAM user..."
+          PGPASSWORD=$DB_PASSWORD psql -h 127.0.0.1 -U $DB_USER -d $DB_NAME -c "CREATE USER \"todo-app-sa@smcghee-todo-p15n-38a6.iam\" WITH LOGIN;"
+          PGPASSWORD=$DB_PASSWORD psql -h 127.0.0.1 -U $DB_USER -d $DB_NAME -c "GRANT ALL PRIVILEGES ON DATABASE todoapp_db TO \"todo-app-sa@smcghee-todo-p15n-38a6.iam\";"
+          PGPASSWORD=$DB_PASSWORD psql -h 127.0.0.1 -U $DB_USER -d $DB_NAME -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"todo-app-sa@smcghee-todo-p15n-38a6.iam\";"
+          PGPASSWORD=$DB_PASSWORD psql -h 127.0.0.1 -U $DB_USER -d $DB_NAME -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO \"todo-app-sa@smcghee-todo-p15n-38a6.iam\";"
+          echo "IAM user created successfully"
+        env:
+        - name: DB_HOST
+          value: "127.0.0.1"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: password
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: dbname
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: password
+      - name: cloudsql-proxy
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
+        args:
+          - "--structured-logs"
+          - "smcghee-todo-p15n-38a6:us-central1:todo-app-db-instance"
+        securityContext:
+          runAsNonRoot: true
