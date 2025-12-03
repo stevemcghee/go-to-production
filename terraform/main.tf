@@ -69,6 +69,12 @@ resource "google_project_service" "iamcredentials_api" {
   disable_on_destroy = false
 }
 
+resource "google_project_service" "clouddeploy_api" {
+  project = var.project_id
+  service = "clouddeploy.googleapis.com"
+  disable_on_destroy = false
+}
+
 # Create a GKE cluster
 resource "google_container_cluster" "primary" {
   name                     = var.cluster_name

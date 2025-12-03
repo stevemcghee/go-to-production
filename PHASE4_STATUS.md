@@ -18,11 +18,16 @@ The deployment is currently running with **healthy pods** using the Phase 4 conf
 - ✅ Updated `main.go` to fetch DB configuration from Secret Manager
 - ✅ Removed reliance on environment variables for DB config
 - ✅ Implemented Cloud SQL IAM Authentication (no password required)
+- ✅ Implemented security headers middleware (CSP, X-Frame-Options, X-Content-Type-Options, X-XSS-Protection)
 
 ### Kubernetes Manifests (✅ Complete)
 - ✅ Created ServiceAccount with Workload Identity annotation
 - ✅ Updated deployment to use ServiceAccount and remove unused environment variables
 - ✅ Configured Cloud SQL Proxy for IAM authentication
+
+### CI/CD Pipeline (✅ Complete)
+- ✅ Added `security_scan` job with gosec (static analysis) and trivy (vulnerability scanning)
+- ✅ Configured scanners to fail build on CRITICAL/HIGH vulnerabilities
 
 ## Files Modified (Committed to `4-secure-configuration` branch)
 - `terraform/main.tf` - Added API enablement and Workload Identity config

@@ -1,0 +1,27 @@
+apiVersion: deploy.cloud.google.com/v1
+kind: DeliveryPipeline
+metadata:
+  name: todo-app-pipeline
+description: Canary deployment pipeline for todo-app-go
+serialPipeline:
+  stages:
+  - targetId: production
+    profiles: []
+    strategy:
+      canary:
+        runtimeConfig:
+          kubernetes:
+            serviceNetworking:
+              service: todo-app-go-service
+              deployment: todo-app-go
+        canaryDeployment:
+          percentages: [1, 10]
+          verify: false
+---
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: production
+description: Production GKE cluster
+gke:
+  cluster: projects/smcghee-todo-p15n-38a6/locations/us-central1/clusters/todo-app-cluster

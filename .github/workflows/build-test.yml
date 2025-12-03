@@ -52,44 +52,15 @@ jobs:
         docker build -t $GCR_HOSTNAME/$GCP_PROJECT/$GAR_REPOSITORY/$IMAGE_NAME:$IMAGE_TAG .
         docker push $GCR_HOSTNAME/$GCP_PROJECT/$GAR_REPOSITORY/$IMAGE_NAME:$IMAGE_TAG
 
-    - name: Install kubectl
-      uses: azure/setup-kubectl@v3 # Using Azure's action as it's common and reliable
-
-    - name: Get GKE credentials
-      uses: google-github-actions/get-gke-credentials@v2
-      with:
-        cluster_name: ${{ vars.GKE_CLUSTER_NAME }}
-        location: ${{ vars.GKE_CLUSTER_LOCATION }} # This will be the zone (e.g., us-central1-a)
-        project_id: ${{ vars.GCP_PROJECT_ID }}
-
-    - name: Apply Kubernetes manifests
+    - name: Create Cloud Deploy Release
       env:
-        IMAGE_NAME: todo-app-go
         IMAGE_TAG: ${{ github.sha }}
-        GCR_HOSTNAME: ${{ vars.GCR_HOSTNAME }}
-        FULL_IMAGE: ${{ vars.GCR_HOSTNAME }}/${{ env.GCP_PROJECT }}/todo-app-go/todo-app-go:${{ github.sha }}
+        RELEASE_NAME: release-${{ github.sha }}
       run: |
-        # Replace placeholders in the deployment manifest
-        echo "Replacing image with: $GCR_HOSTNAME/$GCP_PROJECT/todo-app-go/$IMAGE_NAME:$IMAGE_TAG"
-        sed -i 's|"gcr.io/${PROJECT_ID}/todo-app-go:latest"|"'"$GCR_HOSTNAME/$GCP_PROJECT/todo-app-go/$IMAGE_NAME:$IMAGE_TAG"'"|g' k8s/deployment.yaml
-        sed -i "s|\${INSTANCE_CONNECTION_NAME}|${{ vars.GKE_SQL_INSTANCE_CONNECTION_NAME }}|g" k8s/deployment.yaml
-        sed -i "s|\$(DB_USER)|${{ vars.DB_USER }}|g" k8s/deployment.yaml
-        sed -i "s|\$(DB_PASSWORD)|${{ secrets.DB_PASSWORD }}|g" k8s/deployment.yaml
-        sed -i "s|\$(DB_NAME)|${{ vars.DB_NAME }}|g" k8s/deployment.yaml
-        
-        # Replace placeholders in db-init-job.yaml
-        sed -i "s|\${INSTANCE_CONNECTION_NAME}|${{ vars.GKE_SQL_INSTANCE_CONNECTION_NAME }}|g" k8s/db-init-job.yaml
-        sed -i "s|\$(DB_USER)|${{ vars.DB_USER }}|g" k8s/db-init-job.yaml
-        sed -i "s|\$(DB_PASSWORD)|${{ secrets.DB_PASSWORD }}|g" k8s/db-init-job.yaml
-        sed -i "s|\$(DB_NAME)|${{ vars.DB_NAME }}|g" k8s/db-init-job.yaml
-        
-        echo "Deployment after sed:"
-        grep "image:" k8s/deployment.yaml
-        
-        # Delete existing job if any to avoid immutable field errors
-        kubectl delete job db-init --ignore-not-found
-        
-        kubectl apply -f k8s/
+        gcloud deploy releases create $RELEASE_NAME \
+          --delivery-pipeline=todo-app-pipeline \
+          --region=us-central1 \
+          --images=todo-app-go=us-central1-docker.pkg.dev/smcghee-todo-p15n-38a6/todo-app-go/todo-app-go:$IMAGE_TAG
   
   security_scan:
     runs-on: ubuntu-latest

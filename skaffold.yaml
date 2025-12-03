@@ -1,0 +1,22 @@
+apiVersion: skaffold/v4beta6
+kind: Config
+metadata:
+  name: todo-app-go
+build:
+  artifacts:
+  - image: todo-app-go
+    docker:
+      dockerfile: Dockerfile
+  googleCloudBuild:
+    projectId: smcghee-todo-p15n-38a6
+    region: us-central1
+deploy:
+  kubectl:
+    manifests:
+    - k8s/serviceaccount.yaml
+    - k8s/deployment.yaml
+    - k8s/service.yaml
+    - k8s/hpa.yaml
+    - k8s/ingress.yaml
+    - k8s/managed-certificate.yaml
+    - k8s/backend-config.yaml
