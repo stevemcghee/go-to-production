@@ -1,0 +1,7 @@
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: todo-app-backend-config
+spec:
+  securityPolicy:
+    name: todo-app-security-policy

@@ -16,12 +16,24 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"context"
+
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
+	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 )
 
 type Todo struct {
 	ID        int    `json:"id"`
 	Task      string `json:"task"`
 	Completed bool   `json:"completed"`
+}
+
+type DBConfig struct {
+	DBUser string `json:"db_user"`
+	DBName string `json:"db_name"`
+	DBHost string `json:"db_host"`
+	DBPort string `json:"db_port"`
 }
 
 var db *sql.DB
@@ -51,7 +63,28 @@ func main() {
 
 	slog.Info("Logger initialized")
 
-	initDB() // Call the new initDB function
+	// Fetch secret from Secret Manager
+	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	if projectID == "" {
+		projectID = "smcghee-todo-p15n-38a6" // Fallback for local dev/demo
+	}
+	secretName := fmt.Sprintf("projects/%s/secrets/todo-app-secret/versions/latest", projectID)
+
+	secretValue, err := accessSecretVersion(secretName)
+	if err != nil {
+		slog.Error("Failed to fetch secret from Secret Manager", "error", err)
+		os.Exit(1)
+	} else {
+		slog.Info("Successfully fetched secret from Secret Manager")
+	}
+
+	var dbConfig DBConfig
+	if err := json.Unmarshal([]byte(secretValue), &dbConfig); err != nil {
+		slog.Error("Failed to parse secret JSON", "error", err)
+		os.Exit(1)
+	}
+
+	initDB(dbConfig) // Call the new initDB function
 	defer db.Close()
 
 	http.HandleFunc("/", serveIndex)
@@ -78,16 +111,19 @@ func main() {
 	}
 }
 
-func initDB() {
+func initDB(config DBConfig) {
 	var err error
 
 	// Use Cloud SQL IAM authentication
 	// The username is the service account email without the .gserviceaccount.com suffix
 	// This must match the user created in Cloud SQL
-	dbUser := "todo-app-sa@smcghee-todo-p15n-38a6.iam"
-	dbName := os.Getenv("DB_NAME")
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
+	dbUser := config.DBUser
+	// Optional: Allow override for local dev if needed, or just stick to secret
+	// For now, we rely on the secret.
+
+	dbName := config.DBName
+	dbHost := config.DBHost
+	dbPort := config.DBPort
 
 	// For IAM authentication, a password is required by the driver but ignored by the proxy
 	// The Cloud SQL Proxy handles authentication via Workload Identity
@@ -132,6 +168,7 @@ func healthzHandler(w http.ResponseWriter, r *http.Request) {
 
 func serveIndex(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Serving index.html", "path", r.URL.Path)
+	w.Header().Set("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'")
 	http.ServeFile(w, r, "templates/index.html")
 }
 
@@ -227,4 +264,24 @@ func deleteTodo(w http.ResponseWriter, r *http.Request, id int) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func accessSecretVersion(name string) (string, error) {
+	ctx := context.Background()
+	client, err := secretmanager.NewClient(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to create secretmanager client: %w", err)
+	}
+	defer client.Close()
+
+	req := &secretmanagerpb.AccessSecretVersionRequest{
+		Name: name,
+	}
+
+	result, err := client.AccessSecretVersion(ctx, req)
+	if err != nil {
+		return "", fmt.Errorf("failed to access secret version: %w", err)
+	}
+
+	return string(result.Payload.Data), nil
 }

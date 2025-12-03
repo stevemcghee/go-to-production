@@ -4,6 +4,8 @@ metadata:
   name: todo-app-go-service
   labels:
     app: todo-app-go
+  annotations:
+    cloud.google.com/backend-config: '{"default": "todo-app-backend-config"}'
 spec:
   selector:
     app: todo-app-go

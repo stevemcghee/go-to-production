@@ -17,7 +17,7 @@ spec:
       serviceAccountName: todo-app-sa
       containers:
       - name: todo-app-go
-        image: "us-central1-docker.pkg.dev/smcghee-todo-p15n-38a6/todo-app-go/todo-app-go:iam-auth-v1"
+        image: "us-central1-docker.pkg.dev/smcghee-todo-p15n-38a6/todo-app-go/todo-app-go:secret-refactor-v1"
         resources:
           requests:
             cpu: "100m"
@@ -27,28 +27,9 @@ spec:
             memory: "512Mi"
         ports:
         - containerPort: 8080
-        env:
-        - name: DB_HOST
-          value: "127.0.0.1"
-        - name: DB_PORT
-          value: "5432"
-        - name: DB_USER
-          valueFrom:
-            secretKeyRef:
-              name: db-credentials
-              key: username
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: db-credentials
-              key: password
-        - name: DB_NAME
-          valueFrom:
-            secretKeyRef:
-              name: db-credentials
-              key: dbname
-        - name: DATABASE_URL
-          value: "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable"
+        ports:
+        - containerPort: 8080
+        env: []
         livenessProbe:
           httpGet:
             path: /healthz
