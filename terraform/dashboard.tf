@@ -183,12 +183,85 @@ resource "google_monitoring_dashboard" "todo_app_overview" {
           }
         },
         
-        # ===== ROW 4: INFRASTRUCTURE - PODS & DATABASE =====
+        # ===== ROW 4: BUSINESS METRICS =====
+        {
+          width  = 12
+          height = 4
+          xPos   = 0
+          yPos   = 14
+          widget = {
+            title = "Todo Operations (Business Metrics)"
+            xyChart = {
+              dataSets = [
+                {
+                  timeSeriesQuery = {
+                    timeSeriesFilter = {
+                      filter = join(" AND ", [
+                        "resource.type=\"prometheus_target\"",
+                        "metric.type=\"prometheus.googleapis.com/todos_added_total/counter\""
+                      ])
+                      aggregation = {
+                        alignmentPeriod    = "60s"
+                        perSeriesAligner   = "ALIGN_RATE"
+                        crossSeriesReducer = "REDUCE_SUM"
+                      }
+                    }
+                  }
+                  plotType   = "LINE"
+                  targetAxis = "Y1"
+                  legendTemplate = "Added"
+                },
+                {
+                  timeSeriesQuery = {
+                    timeSeriesFilter = {
+                      filter = join(" AND ", [
+                        "resource.type=\"prometheus_target\"",
+                        "metric.type=\"prometheus.googleapis.com/todos_updated_total/counter\""
+                      ])
+                      aggregation = {
+                        alignmentPeriod    = "60s"
+                        perSeriesAligner   = "ALIGN_RATE"
+                        crossSeriesReducer = "REDUCE_SUM"
+                      }
+                    }
+                  }
+                  plotType   = "LINE"
+                  targetAxis = "Y1"
+                  legendTemplate = "Updated"
+                },
+                {
+                  timeSeriesQuery = {
+                    timeSeriesFilter = {
+                      filter = join(" AND ", [
+                        "resource.type=\"prometheus_target\"",
+                        "metric.type=\"prometheus.googleapis.com/todos_deleted_total/counter\""
+                      ])
+                      aggregation = {
+                        alignmentPeriod    = "60s"
+                        perSeriesAligner   = "ALIGN_RATE"
+                        crossSeriesReducer = "REDUCE_SUM"
+                      }
+                    }
+                  }
+                  plotType   = "LINE"
+                  targetAxis = "Y1"
+                  legendTemplate = "Deleted"
+                }
+              ]
+              yAxis = {
+                label = "Ops/sec"
+                scale = "LINEAR"
+              }
+            }
+          }
+        },
+        
+        # ===== ROW 5: INFRASTRUCTURE - PODS & DATABASE =====
         {
           width  = 4
           height = 4
           xPos   = 0
-          yPos   = 14
+          yPos   = 18
           widget = {
             title = "Active Pods"
             scorecard = {
@@ -216,7 +289,7 @@ resource "google_monitoring_dashboard" "todo_app_overview" {
           width  = 4
           height = 4
           xPos   = 4
-          yPos   = 14
+          yPos   = 18
           widget = {
             title = "Cloud SQL - CPU Utilization"
             xyChart = {
@@ -259,7 +332,7 @@ resource "google_monitoring_dashboard" "todo_app_overview" {
           width  = 4
           height = 4
           xPos   = 8
-          yPos   = 14
+          yPos   = 18
           widget = {
             title = "Cloud SQL - Active Connections"
             xyChart = {
@@ -291,12 +364,12 @@ resource "google_monitoring_dashboard" "todo_app_overview" {
           }
         },
         
-        # ===== ROW 5: GKE NODE HEALTH =====
+        # ===== ROW 6: GKE NODE HEALTH =====
         {
           width  = 6
           height = 4
           xPos   = 0
-          yPos   = 18
+          yPos   = 22
           widget = {
             title = "GKE Node CPU Utilization"
             xyChart = {
@@ -339,7 +412,7 @@ resource "google_monitoring_dashboard" "todo_app_overview" {
           width  = 6
           height = 4
           xPos   = 6
-          yPos   = 18
+          yPos   = 22
           widget = {
             title = "GKE Node Memory Utilization"
             xyChart = {

@@ -42,6 +42,26 @@ var (
 		},
 		[]string{"path", "method"},
 	)
+
+	// Business metrics for tracking todo operations
+	todosAdded = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: "todos_added_total",
+			Help: "Total number of todos added",
+		},
+	)
+	todosUpdated = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: "todos_updated_total",
+			Help: "Total number of todos updated",
+		},
+	)
+	todosDeleted = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: "todos_deleted_total",
+			Help: "Total number of todos deleted",
+		},
+	)
 )
 
 // Todo represents a single todo item.
@@ -459,6 +479,7 @@ func addTodo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(t)
+	todosAdded.Inc()
 }
 
 func updateTodo(w http.ResponseWriter, r *http.Request, id int) {
@@ -483,6 +504,7 @@ func updateTodo(w http.ResponseWriter, r *http.Request, id int) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+	todosUpdated.Inc()
 }
 
 func deleteTodo(w http.ResponseWriter, r *http.Request, id int) {
@@ -501,6 +523,7 @@ func deleteTodo(w http.ResponseWriter, r *http.Request, id int) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+	todosDeleted.Inc()
 }
 
 func accessSecretVersion(name string) (string, error) {
