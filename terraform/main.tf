@@ -172,8 +172,9 @@ resource "google_sql_database_instance" "main_instance" {
       ipv4_enabled = true
     }
     backup_configuration {
-      enabled            = true
-      start_time         = "03:00"
+      enabled                        = true
+      point_in_time_recovery_enabled = true
+      start_time                     = "03:00"
     }
     database_flags {
       name  = "cloudsql.iam_authentication"
