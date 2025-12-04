@@ -73,6 +73,60 @@ kubectl logs -l app=todo-app-go | grep "Successfully connected"
 # AND: "Successfully connected to READ REPLICA"
 ```
 
+## Service Level Objectives (SLOs)
+
+The application is monitored using two key SLOs that define reliability targets:
+
+### Availability SLO: 99.9%
+**Target**: 99.9% of HTTP requests must succeed (non-5xx responses) over a 28-day rolling window.
+
+**Error Budget**: 0.1% of requests can fail (approximately 43 minutes of downtime per month).
+
+**Monitoring**:
+```bash
+# View SLO status in Cloud Console
+gcloud monitoring slos list --service=todo-app-go-svc
+```
+
+**Alerts**:
+- **Fast Burn** (10x rate): Fires when error budget would be exhausted in ~3 days
+  - Action: Immediate incident response required
+- **Slow Burn** (2x rate): Fires when error budget consumption is elevated
+  - Action: Investigate and plan proactive fixes
+
+### Latency SLO: 95% < 500ms
+**Target**: 95% of HTTP requests must complete within 500ms over a 28-day rolling window.
+
+**Error Budget**: 5% of requests can exceed 500ms latency.
+
+### Responding to SLO Violations
+
+When an SLO burn rate alert fires:
+
+1. **Assess Impact**:
+   ```bash
+   # Check current error rate
+   kubectl logs -l app=todo-app-go | grep "error"
+   
+   # Check circuit breaker state
+   kubectl logs -l app=todo-app-go | grep "Circuit Breaker"
+   ```
+
+2. **Identify Root Cause**:
+   - Database issues? Check Cloud SQL metrics in console
+   - Application errors? Review logs for exceptions
+   - External dependency? Check network/DNS
+
+3. **Take Action**:
+   - Rollback recent deployment if correlation found
+   - Scale up pods if load-related: `kubectl scale deployment todo-app-go --replicas=5`
+   - Engage on-call engineer if fast burn alert
+
+4. **Document**:
+   - Log incident in tracking system
+   - Document root cause and remediation
+   - Review and update mitigation strategies
+
 ## Troubleshooting
 
 ### Database Connectivity Issues
