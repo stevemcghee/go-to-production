@@ -83,6 +83,13 @@ resource "google_project_iam_member" "sql_instance_user" {
   member  = "serviceAccount:${google_service_account.todo_app_sa.email}"
 }
 
+# Grant Cloud Trace Agent role for writing traces
+resource "google_project_iam_member" "trace_agent" {
+  project = var.project_id
+  role    = "roles/cloudtrace.agent"
+  member  = "serviceAccount:${google_service_account.todo_app_sa.email}"
+}
+
 # Bind the Kubernetes Service Account to the Google Service Account
 resource "google_service_account_iam_member" "workload_identity_binding" {
   service_account_id = google_service_account.todo_app_sa.name
