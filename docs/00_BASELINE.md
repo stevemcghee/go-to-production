@@ -61,9 +61,9 @@ The app will be available at [http://localhost:8080](http://localhost:8080).
     *   Request Body: `{"completed": true}`
 *   **`DELETE /todos/{id}`**: Delete a to-do item.
 
-## Naive Cloud Deployment (Cloud Run)
+## Simple Cloud Deployment (Cloud Run)
 
-If you want to deploy this "toy app" to the cloud without the complexity of GKE, you can use **Cloud Run**. This is a "naive" deployment because it involves manual steps and doesn't use the robust infrastructure (Terraform, CI/CD) introduced in later milestones.
+If you want to deploy this "toy app" to the cloud without the complexity of GKE, you can use **Cloud Run**. This is a "simple" deployment because it involves manual steps and doesn't use the robust infrastructure (Terraform, CI/CD) introduced in later milestones.
 
 ### 1. Prerequisites
 
@@ -116,7 +116,7 @@ If you want to deploy this "toy app" to the cloud without the complexity of GKE,
 Deploy the container, connecting it to Cloud SQL via the built-in proxy.
 
 ```bash
-gcloud run deploy todo-app-naive \
+gcloud run deploy todo-app-simple \
     --image ${IMAGE_NAME} \
     --platform managed \
     --region us-central1 \
