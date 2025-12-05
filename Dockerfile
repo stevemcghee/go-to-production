@@ -24,6 +24,12 @@ FROM alpine:latest
 
 WORKDIR /app
 
+RUN apk add --no-cache curl && \
+    addgroup -S appgroup && \
+    adduser -S appuser -G appgroup
+
+USER appuser
+
 COPY --from=builder /main .
 COPY templates ./templates
 COPY static ./static

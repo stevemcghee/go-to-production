@@ -1,0 +1,6 @@
+# Example Terraform variables file.
+# Copy this file to 'terraform.tfvars' and fill in your actual values.
+# The 'terraform.tfvars' file is ignored by Git and should not be committed.
+
+project_id = "" # Your GCP project ID
+db_password = "" # A strong password for your database user

@@ -7,7 +7,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"log"
+	"log/slog" // Import slog
 	"net/http"
 	"net/url"
 	"os"
@@ -16,6 +16,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Todo struct {
@@ -27,31 +28,34 @@ type Todo struct {
 var db *sql.DB
 
 func main() {
+	// Initialize a structured logger
+	jsonHandler := slog.NewJSONHandler(os.Stdout, nil)
+	slog.SetDefault(slog.New(jsonHandler))
+
 	var err error
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		log.Fatal("DATABASE_URL environment variable not set")
+		slog.Error("DATABASE_URL environment variable not set")
+		os.Exit(1)
 	}
 
 	// Log the database URL for debugging, but without the password.
 	parsedURL, err := url.Parse(dbURL)
 	if err != nil {
-		log.Fatalf("Could not parse DATABASE_URL: %v", err)
+		slog.Error("Could not parse DATABASE_URL", "error", err)
+		os.Exit(1)
 	}
 	
 	safeURL := parsedURL.Redacted()
-	log.Printf("Connecting to database: %s", safeURL)
+	slog.Info("Connecting to database", "url", safeURL)
 
 	// If using a Cloud SQL Unix socket, check if the directory exists.
 	if host := parsedURL.Query().Get("host"); strings.HasPrefix(host, "/cloudsql/") {
 		if _, err := os.Stat(host); os.IsNotExist(err) {
-			log.Printf("Cloud SQL socket directory not found: %s", host)
+			slog.Info("Cloud SQL socket directory not found", "path", host)
 			// Log the contents of the /cloudsql directory for debugging.
 			files, _ := os.ReadDir("/cloudsql")
-			log.Printf("Contents of /cloudsql:")
-			for _, f := range files {
-				log.Printf("- %s", f.Name())
-			}
+			slog.Info("Contents of /cloudsql:", "files", files)
 		}
 	}
 
@@ -63,18 +67,21 @@ func main() {
 				break
 			}
 		}
-		log.Println("Could not connect to database, retrying in 2 seconds...")
+		slog.Warn("Could not connect to database, retrying in 2 seconds...", "error", err)
 		time.Sleep(2 * time.Second)
 	}
 
 	if err != nil {
-		log.Fatalf("Could not connect to the database after several retries: %v", err)
+		slog.Error("Could not connect to the database after several retries", "error", err)
+		os.Exit(1)
 	}
 	defer db.Close()
 
 	http.HandleFunc("/", serveIndex)
 	http.HandleFunc("/todos", handleTodos)
 	http.HandleFunc("/todos/", handleTodo)
+	http.HandleFunc("/healthz", healthzHandler)
+	http.Handle("/metrics", promhttp.Handler())
 
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
@@ -84,8 +91,21 @@ func main() {
 		port = "8080"
 	}
 
-	log.Printf("Server starting on port %s...", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	slog.Info("Server starting", "port", port)
+	slog.Error("Server stopped", "error", http.ListenAndServe(":"+port, nil))
+}
+
+func healthzHandler(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		http.Error(w, "Database connection not initialized", http.StatusInternalServerError)
+		return
+	}
+	if err := db.Ping(); err != nil {
+		http.Error(w, "Database connection failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
 }
 
 func serveIndex(w http.ResponseWriter, r *http.Request) {
