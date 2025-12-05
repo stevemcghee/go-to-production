@@ -52,15 +52,17 @@ jobs:
         docker build -t $GCR_HOSTNAME/$GCP_PROJECT/$GAR_REPOSITORY/$IMAGE_NAME:$IMAGE_TAG .
         docker push $GCR_HOSTNAME/$GCP_PROJECT/$GAR_REPOSITORY/$IMAGE_NAME:$IMAGE_TAG
 
+    - name: Get short SHA
+      id: short_sha
+      run: echo "sha=$(echo ${{ github.sha }} | cut -c1-8 | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
     - name: Create Cloud Deploy Release
-      env:
-        IMAGE_TAG: ${{ github.sha }}
-        RELEASE_NAME: release-${{ github.sha }}
-      run: |
-        gcloud deploy releases create $RELEASE_NAME \
-          --delivery-pipeline=todo-app-pipeline \
-          --region=us-central1 \
-          --images=todo-app-go=us-central1-docker.pkg.dev/smcghee-todo-p15n-38a6/todo-app-go/todo-app-go:$IMAGE_TAG
+      uses: 'google-github-actions/create-cloud-deploy-release@v1'
+      with:
+        delivery_pipeline: 'todo-app-pipeline'
+        name: 'release-${{ steps.short_sha.outputs.sha }}-${{ github.run_id }}'
+        region: 'us-central1'
+        images: 'todo-app-go=us-central1-docker.pkg.dev/smcghee-todo-p15n-38a6/todo-app-go/todo-app-go:${{ github.sha }}'
   
   security_scan:
     runs-on: ubuntu-latest

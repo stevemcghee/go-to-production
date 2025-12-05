@@ -21,6 +21,34 @@ resource "google_project_iam_member" "gke_developer" {
   member  = "serviceAccount:${google_service_account.github_actions_deployer.email}"
 }
 
+# Grant the Cloud Deploy Releaser role to the Service Account
+resource "google_project_iam_member" "cloud_deploy_releaser" {
+  project = var.project_id
+  role    = "roles/clouddeploy.releaser"
+  member  = "serviceAccount:${google_service_account.github_actions_deployer.email}"
+}
+
+# Grant the Cloud Deploy Job Runner role to the Service Account
+resource "google_project_iam_member" "cloud_deploy_job_runner" {
+  project = var.project_id
+  role    = "roles/clouddeploy.jobRunner"
+  member  = "serviceAccount:${google_service_account.github_actions_deployer.email}"
+}
+
+# Grant the Storage Admin role to the Service Account (required by google-github-actions/create-cloud-deploy-release)
+resource "google_project_iam_member" "storage_admin" {
+  project = var.project_id
+  role    = "roles/storage.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_deployer.email}"
+}
+
+# Grant the Service Account User role to the Service Account
+resource "google_project_iam_member" "service_account_user" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountUser"
+  member  = "serviceAccount:${google_service_account.github_actions_deployer.email}"
+}
+
 # Service Account for GKE Nodes
 resource "google_service_account" "gke_node" {
   account_id   = "gke-node-sa"
