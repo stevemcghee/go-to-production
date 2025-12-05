@@ -1,18 +1,44 @@
-# High Availability & Scalability Guide (Milestone 3)
+# Milestone 3: High Availability & Scalability
 
-This guide documents the steps to upgrade the infrastructure to a regional, highly available configuration. This corresponds to the **`milestone-ha-scale`** tag.
+This document outlines the upgrade to a regional, highly available infrastructure.
 
-## Getting Started
+## 1. Checkout this Milestone
 
-First, checkout the code for this milestone:
+To deploy this version of the infrastructure:
 
 ```bash
 git checkout tags/milestone-ha-scale
 ```
 
-## Overview
+## 2. What was Implemented?
 
-Milestone 3 implements the following improvements:
+We upgraded the "Walking Skeleton" to a production-grade HA setup.
+
+**Key Features:**
+*   **Regional GKE Cluster**: Nodes are distributed across 3 zones in `us-central1`.
+    *   *Benefit*: If one zone fails, the app stays up.
+*   **Regional Cloud SQL**: High Availability (HA) configuration with a standby instance in a different zone.
+    *   *Benefit*: Automatic failover in <60 seconds during zonal outages.
+*   **Horizontal Pod Autoscaler (HPA)**: Automatically adds pods when CPU > 70%.
+    *   *Benefit*: Handles traffic spikes without manual intervention.
+
+## 3. Pitfalls & Considerations
+
+*   **Cost**: Regional clusters and HA databases cost significantly more (~2-3x) than zonal ones.
+*   **Cross-Zone Traffic**: Traffic between zones incurs network costs.
+*   **Cold Starts**: HPA takes time to spin up new pods. For very spiky traffic, you might need over-provisioning or custom metrics.
+
+## 4. Alternatives Considered
+
+*   **Vertical Scaling (VPA)**: Increasing pod size instead of count.
+    *   *Why HPA?* HPA is better for stateless web apps where concurrency is the bottleneck. VPA requires restarting pods to resize them.
+*   **Serverless (Cloud Run)**: Handles scaling automatically.
+    *   *Why GKE HPA?* To demonstrate how to manage scaling policies explicitly in Kubernetes.
+
+## Implementation Guide
+
+(Original guide follows...)
+
 - **Regional GKE Cluster**: Multi-zone Kubernetes cluster for high availability
 - **Regional Cloud SQL**: High availability database with automatic failover
 - **Horizontal Pod Autoscaling (HPA)**: Automatic scaling based on CPU utilization

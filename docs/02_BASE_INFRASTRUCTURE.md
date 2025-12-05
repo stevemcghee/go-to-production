@@ -1,18 +1,44 @@
-# Base Deployment Guide (Milestone 2)
+# Milestone 2: Base Infrastructure (Walking Skeleton)
 
-This document outlines the manual steps required to deploy the "Walking Skeleton" version of the infrastructure. This corresponds to the **`milestone-base-infra`** tag.
+This document outlines the deployment of the "Walking Skeleton" - the minimum viable infrastructure to get the app running in the cloud.
 
-## Getting Started
+## 1. Checkout this Milestone
 
-First, checkout the code for this milestone:
+To deploy this version of the infrastructure:
 
 ```bash
 git checkout tags/milestone-base-infra
 ```
 
----
+## 2. What was Implemented?
 
-### **Prerequisite 1: GCP User Permissions**
+We moved from local Docker Compose to a cloud-native setup on Google Cloud.
+
+**Key Features:**
+*   **GKE Cluster (Zonal)**: A single-zone Kubernetes cluster.
+    *   *Benefit*: Managed container orchestration.
+*   **Cloud SQL (Single Zone)**: Managed PostgreSQL instance.
+    *   *Benefit*: No need to manage database backups or OS patching.
+*   **CI/CD Pipeline**: GitHub Actions to build and deploy.
+    *   *Benefit*: Automated, repeatable deployments.
+
+## 3. Pitfalls & Considerations
+
+*   **Zonal Failures**: This architecture is **NOT** high availability. If the zone `us-central1-a` goes down, the app goes down.
+*   **Database Passwords**: At this stage, we are still handling database passwords via Terraform outputs and manual secrets. This is a security risk addressed in Milestone 4.
+*   **Public IP**: The Cloud SQL instance has a public IP (though protected by the proxy). Private Service Connect would be more secure but more complex to set up initially.
+
+## 4. Alternatives Considered
+
+*   **Cloud Run**: Simpler and cheaper for this specific app.
+    *   *Why GKE?* To demonstrate Kubernetes patterns (Sidecars, HPA, Workload Identity) relevant to larger scale systems.
+*   **GKE Autopilot**: Would simplify node management.
+    *   *Why Standard?* To show explicit control over node pools and resources for educational purposes.
+
+## Deployment Instructions
+
+(Original instructions follow...)
+
 
 Before running `terraform apply`, ensure the Google Cloud user you are authenticated as has the **`Editor`** role on the GCP project. This is a one-time bootstrap step that must be done manually.
 

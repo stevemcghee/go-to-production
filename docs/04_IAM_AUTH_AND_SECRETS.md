@@ -1,18 +1,44 @@
-# Secure Configuration Guide (Milestone 4)
+# Milestone 4: IAM Authentication & Secrets
 
-This guide documents the steps to secure the configuration by migrating credentials to Google Secret Manager and implementing Workload Identity. This corresponds to the **`milestone-iam-auth`** tag.
+This document outlines the security hardening of database credentials and identity.
 
-## Getting Started
+## 1. Checkout this Milestone
 
-First, checkout the code for this milestone:
+To deploy this version of the infrastructure:
 
 ```bash
 git checkout tags/milestone-iam-auth
 ```
 
-## Overview
+## 2. What was Implemented?
 
-Milestone 4 implements the following security improvements:
+We removed long-lived passwords and keys, replacing them with short-lived, identity-based access.
+
+**Key Features:**
+*   **Workload Identity**: GKE Pods act as Google Service Accounts (GSA).
+    *   *Benefit*: No need to manage or rotate JSON service account keys.
+*   **Secret Manager**: Database connection info is stored in Secret Manager, not environment variables.
+    *   *Benefit*: Centralized audit logging and access control for secrets.
+*   **Cloud SQL IAM Auth**: Database login uses the IAM identity, not a password.
+    *   *Benefit*: Eliminates the risk of leaked database passwords.
+
+## 3. Pitfalls & Considerations
+
+*   **Complexity**: Setting up Workload Identity involves binding KSA, GSA, and IAM roles. It's easy to miss a binding.
+*   **Latency**: IAM Auth handshakes are slightly slower than password auth, but negligible for connection pooling.
+*   **Proxy Dependency**: We still use Cloud SQL Proxy. The sidecar pattern increases pod resource usage slightly.
+
+## 4. Alternatives Considered
+
+*   **Kubernetes Secrets**: Storing passwords in `etcd`.
+    *   *Why Secret Manager?* Better integration with GCP IAM, audit logging, and rotation capabilities.
+*   **Vault**: HashiCorp Vault is a popular alternative.
+    *   *Why Secret Manager?* Built-in, managed service with no operational overhead.
+
+## Implementation Guide
+
+(Original guide follows...)
+
 - **Google Secret Manager**: Stores sensitive database credentials securely.
 - **Workload Identity**: Allows Kubernetes pods to authenticate with Google Cloud APIs using a Kubernetes Service Account (KSA) mapped to a Google Service Account (GSA), eliminating the need for long-lived service account keys.
 - **Application Logic**: The application now fetches secrets directly from Secret Manager at runtime.

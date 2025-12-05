@@ -96,16 +96,17 @@ The application exposes the following API endpoints:
 
 ## Documentation
 
-- **[Runbook](docs/RUNBOOK.md)** - Operational procedures and troubleshooting
-- **[Base Deployment Guide](docs/BASE_DEPLOYMENT_GUIDE.md)** - Manual steps for initial GKE setup
-- **[HA & Scalability Guide](docs/HA_SCALABILITY_GUIDE.md)** - Regional cluster and HPA details
-- **[Secure Configuration Guide](docs/SECURE_CONFIG_GUIDE.md)** - Secret Manager and Workload Identity
-- **[Cloud Deploy Guide](docs/CLOUD_DEPLOY_GUIDE.md)** - Canary deployment pipeline details
-- **[HTTPS Setup](docs/HTTPS_SETUP.md)** - Configure HTTPS with GKE Ingress
-- **[Cloud SQL IAM Auth](docs/CLOUD_SQL_IAM_AUTH.md)** - IAM authentication setup
-- **[Workload Identity](docs/WORKLOAD_IDENTITY.md)** - Workload Identity configuration
-- **[Repo Analysis](docs/REPO_ANALYSIS.md)** - Historical codebase analysis
-- **[Milestones](MILESTONES.md)** - Project release history
+- **[Milestone 1: Risk Analysis](docs/01_RISK_ANALYSIS.md)**
+- **[Milestone 2: Base Infrastructure](docs/02_BASE_INFRASTRUCTURE.md)**
+- **[Milestone 3: HA & Scalability](docs/03_HA_SCALABILITY.md)**
+- **[Milestone 4: IAM Auth & Secrets](docs/04_IAM_AUTH_AND_SECRETS.md)**
+- **[Milestone 5: Security Hardening](docs/05_SECURITY_HARDENING.md)**
+- **[Milestone 6: Advanced Deployment](docs/06_ADVANCED_DEPLOYMENT.md)**
+- **[Milestone 7: Observability & Metrics](docs/07_OBSERVABILITY_METRICS.md)**
+- **[Milestone 8: Resilience & SLOs](docs/08_RESILIENCE_SLOS.md)**
+- **[Milestone 9: Tracing & Polish](docs/09_TRACING_AND_POLISH.md)**
+- **[Production Journey](PRODUCTION_JOURNEY.md)** - Overview of all milestones
+- **[Runbook](docs/RUNBOOK.md)** - Operational procedures
 
 ## Pushing to Google Artifact Registry
 

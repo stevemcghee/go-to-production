@@ -22,76 +22,67 @@ You can checkout the specific **Git Tag** for each milestone to see the exact st
 **Tag:** `milestone-risk-analysis`
 **Source:** Branch `1-risk-analysis`
 **Description:**
-- Comprehensive Risk Mitigation Plan (`RISK_MITIGATION_PLAN.md`).
-- Implementation Plan (`IMPLEMENTATION_PLAN.md`) outlining the roadmap.
-- Identification of critical risks (SPOF, Security, etc.).
+- Comprehensive Risk Mitigation Plan.
+- Implementation Plan outlining the roadmap.
+- **Docs:** [Milestone 1: Risk Analysis](docs/01_RISK_ANALYSIS.md)
 
 ### 2. Base Infrastructure (Walking Skeleton)
 **Tag:** `milestone-base-infra`
 **Source:** Branch `2-gke-cicd-base`
 **Description:**
-- **Infrastructure:** Basic GKE cluster and single-zone Cloud SQL instance via Terraform.
-- **CI/CD:** GitHub Actions pipeline for building and deploying to GKE.
-- **App:** Database initialization job.
-- **Goal:** Get the app running in the cloud.
-- **Docs:** [Base Deployment Guide](docs/BASE_DEPLOYMENT_GUIDE.md)
+- **Infrastructure:** Basic GKE cluster and single-zone Cloud SQL.
+- **CI/CD:** GitHub Actions pipeline.
+- **Docs:** [Milestone 2: Base Infrastructure](docs/02_BASE_INFRASTRUCTURE.md)
 
 ### 3. High Availability & Scalability
 **Tag:** `milestone-ha-scale`
 **Source:** Branch `3-ha-scalability`
 **Description:**
-- **Infrastructure:** Regional GKE cluster (multi-zone) and HA Cloud SQL (primary + standby).
-- **Scaling:** Horizontal Pod Autoscaler (HPA) configured.
-- **Goal:** Resilience against zonal failures and traffic spikes.
-- **Docs:** [HA & Scalability Guide](docs/HA_SCALABILITY_GUIDE.md)
+- **Infrastructure:** Regional GKE cluster and HA Cloud SQL.
+- **Scaling:** Horizontal Pod Autoscaler (HPA).
+- **Docs:** [Milestone 3: HA & Scalability](docs/03_HA_SCALABILITY.md)
 
 ### 4. IAM Authentication (Security)
 **Tag:** `milestone-iam-auth`
-**Source:** Commit `c712622` (from `4-secure-configuration`)
+**Source:** Commit `c712622`
 **Description:**
-- **Security:** Implementation of Cloud SQL IAM Authentication.
-- **Hardening:** Removal of database passwords from secrets/env vars.
-- **Identity:** Workload Identity configuration for GKE.
-- **Docs:** [Cloud SQL IAM Auth](docs/CLOUD_SQL_IAM_AUTH.md), [Workload Identity](docs/WORKLOAD_IDENTITY.md)
+- **Security:** Cloud SQL IAM Authentication.
+- **Identity:** Workload Identity for GKE.
+- **Docs:** [Milestone 4: IAM Auth & Secrets](docs/04_IAM_AUTH_AND_SECRETS.md)
 
 ### 5. Security Hardening
 **Tag:** `milestone-security-hardening`
-**Source:** Commit `49171cc` (from `4-secure-configuration`)
+**Source:** Commit `49171cc`
 **Description:**
-- **Network:** Cloud Armor WAF and HTTPS (Managed SSL).
-- **App:** Content Security Policy (CSP) middleware.
-- **DevSecOps:** Integration of `gosec` and `trivy` scanners in CI/CD.
-- **Docs:** [Secure Configuration Guide](docs/SECURE_CONFIG_GUIDE.md), [HTTPS Setup](docs/HTTPS_SETUP.md)
+- **Network:** Cloud Armor WAF and HTTPS.
+- **App:** Content Security Policy (CSP).
+- **Docs:** [Milestone 5: Security Hardening](docs/05_SECURITY_HARDENING.md)
 
 ### 6. Advanced Deployment (Canary)
 **Tag:** `milestone-advanced-deployment`
-**Source:** Commit `36dd27d` (from `4.5-advanced-deployments` / `mega-robustness` history)
+**Source:** Commit `36dd27d`
 **Description:**
-- **Deployment:** Migration to Google Cloud Deploy.
-- **Strategy:** Canary deployments (1% -> 10% -> 100%).
-- **Tooling:** Skaffold configuration for render/deploy.
-- **Docs:** [Cloud Deploy Guide](docs/CLOUD_DEPLOY_GUIDE.md)
+- **Deployment:** Google Cloud Deploy with Canary strategy.
+- **Docs:** [Milestone 6: Advanced Deployment](docs/06_ADVANCED_DEPLOYMENT.md)
 
 ### 7. Observability & Metrics
 **Tag:** `milestone-observability-metrics`
-**Source:** Branch `4-secure-configuration` (Tip)
+**Source:** Branch `4-secure-configuration`
 **Description:**
-- **Metrics:** Prometheus instrumentation for application metrics.
-- **Recovery:** Point-in-Time Recovery (PITR) enabled for Cloud SQL.
-- **Alerting:** Basic alerting configuration.
+- **Metrics:** Prometheus instrumentation and PITR.
+- **Docs:** [Milestone 7: Observability & Metrics](docs/07_OBSERVABILITY_METRICS.md)
 
 ### 8. Resilience & SLOs
 **Tag:** `milestone-resilience-slos`
-**Source:** Commit `b7c9bdf` (from `mega-robustness`)
+**Source:** Commit `b7c9bdf`
 **Description:**
-- **Resilience:** Application-level retries and circuit breakers.
-- **SLOs:** Service Level Objectives (Availability, Latency) with Burn Rate alerts.
-- **Testing:** Load generator for synthetic traffic.
+- **Resilience:** Circuit breakers and retries.
+- **SLOs:** Availability and Latency targets.
+- **Docs:** [Milestone 8: Resilience & SLOs](docs/08_RESILIENCE_SLOS.md)
 
 ### 9. Tracing & Polish
 **Tag:** `milestone-tracing-polish`
-**Source:** Branch `mega-robustness` (Tip)
+**Source:** Branch `mega-robustness`
 **Description:**
 - **Observability:** Cloud Trace integration.
-- **Fixes:** GKE Backup Plan, Favicon fixes, Dashboard improvements.
-- **Goal:** Full production readiness.
+- **Docs:** [Milestone 9: Tracing & Polish](docs/09_TRACING_AND_POLISH.md)
