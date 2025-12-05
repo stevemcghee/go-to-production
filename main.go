@@ -79,7 +79,7 @@ type Todo struct {
 }
 
 // DBConfig holds database connection parameters.
-// For resilience, we support separate read and write endpoints:
+// For robustness, we support separate read and write endpoints:
 // - DBHost/DBPort: Primary database (handles writes and reads)
 // - DBReadHost/DBReadPort: Read replica (handles reads only)
 // If read replica is unavailable, reads fall back to primary.
@@ -132,8 +132,8 @@ func init() {
 	cb = gobreaker.NewCircuitBreaker(st)
 }
 
-// executeWithResilience wraps database operations with both retry logic and circuit breaking.
-// This provides multi-layer resilience:
+// executeWithRobustness wraps database operations with both retry logic and circuit breaking.
+// This provides multi-layer robustness:
 // 1. Circuit Breaker: Fails fast if database is consistently down (prevents cascading failures)
 // 2. Exponential Backoff: Retries transient errors with increasing delays
 //
@@ -141,7 +141,7 @@ func init() {
 // - nil on success
 // - gobreaker.ErrOpenState if circuit is open (HTTP handlers should return 503)
 // - underlying error if retries exhausted
-func executeWithResilience(op func() error) error {
+func executeWithRobustness(op func() error) error {
 	_, err := cb.Execute(func() (interface{}, error) {
 		return nil, retryOperation(op)
 	})
@@ -489,14 +489,14 @@ func handleTodo(w http.ResponseWriter, r *http.Request) {
 // Uses dbRead (read replica) to offload SELECT queries from the primary database.
 // This improves performance and allows the primary to focus on writes.
 //
-// Resilience features:
+// Robustness features:
 // - Automatic retries on transient errors (network blips, etc.)
 // - Circuit breaker prevents cascading failures
 // - Falls back to primary if read replica is unavailable
 func getTodos(w http.ResponseWriter, r *http.Request) {
 	var todos []Todo
 
-	err := executeWithResilience(func() error {
+	err := executeWithRobustness(func() error {
 		// Use dbRead (read replica) for all SELECT queries
 		// This distributes read load and improves overall performance
 		rows, err := dbRead.Query("SELECT id, task, completed FROM todos ORDER BY id")
@@ -544,7 +544,7 @@ func addTodo(w http.ResponseWriter, r *http.Request) {
 
 	slog.Info("Decoded todo", "task", t.Task)
 
-	err := executeWithResilience(func() error {
+	err := executeWithRobustness(func() error {
 		return db.QueryRow("INSERT INTO todos (task) VALUES ($1) RETURNING id, completed", t.Task).Scan(&t.ID, &t.Completed)
 	})
 
@@ -574,7 +574,7 @@ func updateTodo(w http.ResponseWriter, r *http.Request, id int) {
 		return
 	}
 
-	err := executeWithResilience(func() error {
+	err := executeWithRobustness(func() error {
 		_, err := db.Exec("UPDATE todos SET completed = $1 WHERE id = $2", t.Completed, id)
 		return err
 	})
@@ -593,7 +593,7 @@ func updateTodo(w http.ResponseWriter, r *http.Request, id int) {
 }
 
 func deleteTodo(w http.ResponseWriter, r *http.Request, id int) {
-	err := executeWithResilience(func() error {
+	err := executeWithRobustness(func() error {
 		_, err := db.Exec("DELETE FROM todos WHERE id = $1", id)
 		return err
 	})

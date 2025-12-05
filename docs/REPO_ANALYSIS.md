@@ -43,7 +43,7 @@ The repository has grown from a simple local Docker setup to a comprehensive clo
     *   Prometheus instrumentation
     *   Structured logging
     *   Cloud Trace integration
-    *   Resilience patterns (retries, circuit breakers)
+    *   Robustness patterns (retries, circuit breakers)
     *   Security headers (CSP)
 
 ## Visualization

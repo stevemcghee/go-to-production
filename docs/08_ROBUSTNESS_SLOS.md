@@ -1,6 +1,6 @@
-# Milestone 8: Resilience & SLOs
+# Milestone 8: Robustness & SLOs
 
-This document outlines the implementation of application resilience patterns and Service Level Objectives.
+This document outlines the implementation of application robustness patterns and Service Level Objectives.
 
 ## 1. Checkout this Milestone
 
@@ -32,4 +32,4 @@ We made the application "tougher" and defined what "healthy" means.
 ## 4. Alternatives Considered
 
 *   **Service Mesh (Istio)**: Can handle retries/circuit breaking at the network layer.
-    *   *Why Library?* For a simple app, adding a service mesh is significant operational overhead. Library-based resilience is simpler to start with.
+    *   *Why Library?* For a simple app, adding a service mesh is significant operational overhead. Library-based robustness is simpler to start with.

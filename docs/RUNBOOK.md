@@ -75,7 +75,7 @@ If traces aren't appearing:
    kubectl logs -l app=todo-app-go -n todo-app | grep "Cloud Trace"
    ```
 
-## Application Resilience Features
+## Application Robustness Features
 
 ### Automatic Retries
 The application implements exponential backoff retries for all database operations.

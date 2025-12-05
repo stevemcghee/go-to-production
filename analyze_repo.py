@@ -64,7 +64,7 @@ def main():
         ("milestone-security-hardening", "5. Security"),
         ("milestone-advanced-deployment", "6. Deploy"),
         ("milestone-observability-metrics", "7. Obs"),
-        ("milestone-resilience-slos", "8. Resilience"),
+        ("milestone-resilience-slos", "8. Robustness"),
         ("milestone-tracing-polish", "9. Polish")
     ]
     
