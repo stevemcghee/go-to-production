@@ -16,7 +16,14 @@ spec:
     spec:
       containers:
       - name: todo-app-go
-        image: "gcr.io/${PROJECT_ID}/todo-app-go:latest"
+        image: "us-central1-docker.pkg.dev/smcghee-todo-p15n-38a6/todo-app-go/todo-app-go:f4e9863fd10494be3629e83e6434b7586dad9964"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
         ports:
         - containerPort: 8080
         env:
@@ -25,11 +32,20 @@ spec:
         - name: DB_PORT
           value: "5432"
         - name: DB_USER
-          value: "$(DB_USER)" # Placeholder - will be fetched from Secret Manager
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: username
         - name: DB_PASSWORD
-          value: "$(DB_PASSWORD)" # Placeholder - will be fetched from Secret Manager
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: password
         - name: DB_NAME
-          value: "$(DB_NAME)" # Placeholder - will be fetched from Secret Manager
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: dbname
         - name: DATABASE_URL
           value: "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable"
         livenessProbe:
@@ -55,7 +71,7 @@ spec:
         image: gcr.io/cloudsql-docker/gce-proxy:1.17
         command:
           - "/cloud_sql_proxy"
-          - "-instances=${INSTANCE_CONNECTION_NAME}=tcp:5432"
+          - "-instances=smcghee-todo-p15n-38a6:us-central1:todo-app-db-instance=tcp:5432"
         securityContext:
           runAsNonRoot: true
         resources:

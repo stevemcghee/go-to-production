@@ -60,7 +60,8 @@ resource "google_project_service" "logging_api" {
 # Create a GKE cluster
 resource "google_container_cluster" "primary" {
   name                     = var.cluster_name
-  location                 = var.zone
+  location                 = var.region
+  deletion_protection      = false
   remove_default_node_pool = true
   initial_node_count       = 1 # A default node pool is required if remove_default_node_pool is true, but we're removing it so we set this to 1
 
@@ -73,13 +74,13 @@ resource "google_container_cluster" "primary" {
   }
 
   # Enable Cloud Logging for container logs
-  logging_service = "logging.googleapis.com/kubernetes"
+  # Enable Cloud Logging for container logs
   logging_config {
     enable_components = ["SYSTEM_COMPONENTS", "WORKLOADS"]
   }
 
   # Enable Cloud Monitoring
-  monitoring_service = "monitoring.googleapis.com/kubernetes"
+  # Enable Cloud Monitoring
   monitoring_config {
     enable_components = ["SYSTEM_COMPONENTS"]
     managed_prometheus {
@@ -97,7 +98,7 @@ resource "google_container_cluster" "primary" {
 # Create a GKE node pool
 resource "google_container_node_pool" "primary_nodes" {
   name       = "${google_container_cluster.primary.name}-node-pool"
-  location   = var.zone
+  location   = var.region
   cluster    = google_container_cluster.primary.name
   node_count = 2
 
@@ -134,8 +135,8 @@ resource "google_sql_database_instance" "main_instance" {
   region           = var.region
 
   settings {
-    tier = "db-f1-micro" # Smallest tier for testing/dev
-    availability_type = "ZONAL"
+    tier = "db-custom-1-3840" # Minimum for HA
+    availability_type = "REGIONAL"
     ip_configuration {
       ipv4_enabled = true
     }
