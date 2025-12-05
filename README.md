@@ -102,9 +102,18 @@ The application exposes the following API endpoints:
 
 ## Documentation
 
-- **[Cloud SQL IAM Authentication](docs/CLOUD_SQL_IAM_AUTH.md)** - Complete guide to IAM authentication setup
-- **[Workload Identity Setup](docs/WORKLOAD_IDENTITY.md)** - How to configure Workload Identity for GKE
-- **[HTTPS Setup](docs/HTTPS_SETUP.md)** - Configure HTTPS with GKE Ingress and Google-managed SSL certificates
+## Documentation
+
+- **[Runbook](docs/RUNBOOK.md)** - Operational procedures and troubleshooting
+- **[Base Deployment Guide](docs/BASE_DEPLOYMENT_GUIDE.md)** - Manual steps for initial GKE setup
+- **[HA & Scalability Guide](docs/HA_SCALABILITY_GUIDE.md)** - Regional cluster and HPA details
+- **[Secure Configuration Guide](docs/SECURE_CONFIG_GUIDE.md)** - Secret Manager and Workload Identity
+- **[Cloud Deploy Guide](docs/CLOUD_DEPLOY_GUIDE.md)** - Canary deployment pipeline details
+- **[HTTPS Setup](docs/HTTPS_SETUP.md)** - Configure HTTPS with GKE Ingress
+- **[Cloud SQL IAM Auth](docs/CLOUD_SQL_IAM_AUTH.md)** - IAM authentication setup
+- **[Workload Identity](docs/WORKLOAD_IDENTITY.md)** - Workload Identity configuration
+- **[Repo Analysis](docs/REPO_ANALYSIS.md)** - Historical codebase analysis
+- **[Milestones](MILESTONES.md)** - Project release history
 
 ## Pushing to Google Artifact Registry
 

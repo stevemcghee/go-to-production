@@ -28,6 +28,7 @@ This document tracks the evolution of the `todo-app-go` project through various 
 - **CI/CD:** GitHub Actions pipeline for building and deploying to GKE.
 - **App:** Database initialization job.
 - **Goal:** Get the app running in the cloud.
+- **Docs:** [Base Deployment Guide](docs/BASE_DEPLOYMENT_GUIDE.md)
 
 ### 3. High Availability & Scalability
 **Tag:** `milestone-ha-scale`
@@ -36,6 +37,7 @@ This document tracks the evolution of the `todo-app-go` project through various 
 - **Infrastructure:** Regional GKE cluster (multi-zone) and HA Cloud SQL (primary + standby).
 - **Scaling:** Horizontal Pod Autoscaler (HPA) configured.
 - **Goal:** Resilience against zonal failures and traffic spikes.
+- **Docs:** [HA & Scalability Guide](docs/HA_SCALABILITY_GUIDE.md)
 
 ### 4. IAM Authentication (Security)
 **Tag:** `milestone-iam-auth`
@@ -44,6 +46,7 @@ This document tracks the evolution of the `todo-app-go` project through various 
 - **Security:** Implementation of Cloud SQL IAM Authentication.
 - **Hardening:** Removal of database passwords from secrets/env vars.
 - **Identity:** Workload Identity configuration for GKE.
+- **Docs:** [Cloud SQL IAM Auth](docs/CLOUD_SQL_IAM_AUTH.md), [Workload Identity](docs/WORKLOAD_IDENTITY.md)
 
 ### 5. Security Hardening
 **Tag:** `milestone-security-hardening`
@@ -52,6 +55,7 @@ This document tracks the evolution of the `todo-app-go` project through various 
 - **Network:** Cloud Armor WAF and HTTPS (Managed SSL).
 - **App:** Content Security Policy (CSP) middleware.
 - **DevSecOps:** Integration of `gosec` and `trivy` scanners in CI/CD.
+- **Docs:** [Secure Configuration Guide](docs/SECURE_CONFIG_GUIDE.md), [HTTPS Setup](docs/HTTPS_SETUP.md)
 
 ### 6. Advanced Deployment (Canary)
 **Tag:** `milestone-advanced-deployment`
@@ -60,6 +64,7 @@ This document tracks the evolution of the `todo-app-go` project through various 
 - **Deployment:** Migration to Google Cloud Deploy.
 - **Strategy:** Canary deployments (1% -> 10% -> 100%).
 - **Tooling:** Skaffold configuration for render/deploy.
+- **Docs:** [Cloud Deploy Guide](docs/CLOUD_DEPLOY_GUIDE.md)
 
 ### 7. Observability & Metrics
 **Tag:** `milestone-observability-metrics`
