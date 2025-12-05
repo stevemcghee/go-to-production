@@ -57,18 +57,18 @@ The `main` branch contains cloud-specific code that will not run locally without
 
 Each milestone represents a specific tag in the git history. You can checkout these tags to see the code at that stage.
 
-| Milestone | Tag | Source | Description |
-| :--- | :--- | :--- | :--- |
-| **0. Baseline** | `baseline` | Initial Commit | Simple Go app + Docker Compose. [Docs](docs/00_BASELINE.md) |
-| **1. Risk Analysis** | `milestone-risk-analysis` | Branch `1-risk-analysis` | Risk mitigation & implementation plans. [Docs](docs/01_RISK_ANALYSIS.md) |
-| **2. Base Infra** | `milestone-base-infra` | Branch `2-gke-cicd-base` | GKE, Cloud SQL, CI/CD pipeline. [Docs](docs/02_BASE_INFRASTRUCTURE.md) |
-| **3. HA & Scale** | `milestone-ha-scale` | Branch `3-ha-scalability` | Regional GKE, HA Cloud SQL, HPA. [Docs](docs/03_HA_SCALABILITY.md) |
-| **4. IAM Auth** | `milestone-iam-auth` | Commit `c712622` | Workload Identity, Cloud SQL IAM Auth. [Docs](docs/04_IAM_AUTH_AND_SECRETS.md) |
-| **5. Security** | `milestone-security-hardening` | Commit `49171cc` | Cloud Armor WAF, HTTPS, CSP. [Docs](docs/05_SECURITY_HARDENING.md) |
-| **6. Advanced Deploy** | `milestone-advanced-deployment` | Commit `36dd27d` | Cloud Deploy, Canary releases. [Docs](docs/06_ADVANCED_DEPLOYMENT.md) |
-| **7. Observability** | `milestone-observability-metrics` | Branch `4-secure-configuration` | Prometheus metrics, PITR. [Docs](docs/07_OBSERVABILITY_METRICS.md) |
-| **8. Resilience** | `milestone-resilience-slos` | Commit `b7c9bdf` | Circuit breakers, retries, SLOs. [Docs](docs/08_RESILIENCE_SLOS.md) |
-| **9. Tracing** | `milestone-tracing-polish` | Branch `mega-robustness` | Cloud Trace integration. [Docs](docs/09_TRACING_AND_POLISH.md) |
+| Milestone | Tag | Description |
+| :--- | :--- | :--- |
+| **0. Baseline** | `baseline` | Simple Go app + Docker Compose. [Docs](docs/00_BASELINE.md) |
+| **1. Risk Analysis** | `milestone-risk-analysis` | Risk mitigation & implementation plans. [Docs](docs/01_RISK_ANALYSIS.md) |
+| **2. Base Infra** | `milestone-base-infra` | GKE, Cloud SQL, CI/CD pipeline. [Docs](docs/02_BASE_INFRASTRUCTURE.md) |
+| **3. HA & Scale** | `milestone-ha-scale` | Regional GKE, HA Cloud SQL, HPA. [Docs](docs/03_HA_SCALABILITY.md) |
+| **4. IAM Auth** | `milestone-iam-auth` | Workload Identity, Cloud SQL IAM Auth. [Docs](docs/04_IAM_AUTH_AND_SECRETS.md) |
+| **5. Security** | `milestone-security-hardening` | Cloud Armor WAF, HTTPS, CSP. [Docs](docs/05_SECURITY_HARDENING.md) |
+| **6. Advanced Deploy** | `milestone-advanced-deployment` | Cloud Deploy, Canary releases. [Docs](docs/06_ADVANCED_DEPLOYMENT.md) |
+| **7. Observability** | `milestone-observability-metrics` | Prometheus metrics, PITR. [Docs](docs/07_OBSERVABILITY_METRICS.md) |
+| **8. Resilience** | `milestone-resilience-slos` | Circuit breakers, retries, SLOs. [Docs](docs/08_RESILIENCE_SLOS.md) |
+| **9. Tracing** | `milestone-tracing-polish` | Cloud Trace integration. [Docs](docs/09_TRACING_AND_POLISH.md) |
 
 See **[Milestone 0: Baseline Application](docs/00_BASELINE.md)** for instructions on running the local development version.
 
