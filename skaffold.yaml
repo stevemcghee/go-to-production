@@ -19,3 +19,8 @@ manifests:
   - k8s/ingress.yaml
   - k8s/managed-certificate.yaml
   - k8s/backend-config.yaml
+profiles:
+- name: verify
+  manifests:
+    rawYaml:
+    - k8s/verify-job.yaml

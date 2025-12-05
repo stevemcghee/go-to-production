@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: verify-job
+  labels:
+    app: verify-job
+spec:
+  template:
+    metadata:
+      labels:
+        app: verify-job
+    spec:
+      containers:
+      - name: curl
+        image: curlimages/curl:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          curl -s -o /dev/null -w "%{http_code}" http://todo-app-go-service:8080/healthz | grep 200
+      restartPolicy: Never
+  backoffLimit: 1

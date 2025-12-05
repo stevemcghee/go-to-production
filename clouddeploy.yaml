@@ -6,7 +6,7 @@ description: Canary deployment pipeline for todo-app-go
 serialPipeline:
   stages:
   - targetId: production
-    profiles: []
+    profiles: ["verify"]
     strategy:
       canary:
         runtimeConfig:
@@ -16,7 +16,7 @@ serialPipeline:
               deployment: todo-app-go
         canaryDeployment:
           percentages: [1, 10]
-          verify: false
+          verify: true
 ---
 apiVersion: deploy.cloud.google.com/v1
 kind: Target
