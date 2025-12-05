@@ -2,6 +2,7 @@ apiVersion: cloud.google.com/v1
 kind: BackendConfig
 metadata:
   name: todo-app-backend-config
+  namespace: todo-app
 spec:
   # Temporarily disabled to debug 403 errors
   # securityPolicy:

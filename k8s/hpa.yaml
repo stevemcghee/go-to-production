@@ -2,6 +2,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: todo-app-hpa
+  namespace: todo-app
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

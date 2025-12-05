@@ -122,5 +122,5 @@ resource "google_project_iam_member" "trace_agent" {
 resource "google_service_account_iam_member" "workload_identity_binding" {
   service_account_id = google_service_account.todo_app_sa.name
   role               = "roles/iam.workloadIdentityUser"
-  member             = "serviceAccount:${var.project_id}.svc.id.goog[default/todo-app-sa]"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[todo-app/todo-app-sa]"
 }

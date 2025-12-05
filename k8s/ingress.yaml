@@ -2,6 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: todo-app-ingress
+  namespace: todo-app
   annotations:
     kubernetes.io/ingress.class: "gce"
     networking.gke.io/managed-certificates: "todo-app-cert"

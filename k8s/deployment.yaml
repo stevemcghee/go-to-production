@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: todo-app-go
+  namespace: todo-app
   labels:
     app: todo-app-go
 spec:
@@ -23,8 +24,8 @@ spec:
             cpu: "100m"
             memory: "128Mi"
           limits:
-            cpu: "500m"
-            memory: "512Mi"
+            cpu: "250m"
+            memory: "256Mi"
         ports:
         - containerPort: 8080
         env: []
