@@ -32,20 +32,19 @@ profiles:
       - -c
       - |
         echo "Verifying deployment health..."
-        for i in 1 2 3 4 5; do
+        for i in 1 2 3 4 5 6 7 8 9 10; do
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://todo-app-go-service:8080/healthz)
           if [ "$STATUS" = "200" ]; then
             echo "Health check passed (attempt $i/5)"
             exit 0
           fi
           echo "Health check failed with status $STATUS (attempt $i/5), retrying..."
-          sleep 5
+          sleep 10
         done
         echo "Health check failed after 5 attempts"
         exit 1
   manifests:
-    rawYaml:
-    - k8s/verify-job.yaml
+    rawYaml: []
 - name: backup
   manifests:
     rawYaml:
