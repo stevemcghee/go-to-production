@@ -1,59 +1,14 @@
 # go-to-production: A Cloud-Native Journey
 
-> **Note:** This is a "minimum viable system (more than one component)" application. The code itself (a simple To-Do list) is intentionally basic. The real value of this repository is the **infrastructure, security, and observability** wrapper around it. It demonstrates how to take a simple app and make it production-ready on Google Cloud.
+> **Note:** This repository focuses on the wrapper, not the candy. The application code is deliberately minimal to highlight the **Infrastructure, Security, and Observability** layers required for production.
 
 ## Purpose
 
 This repository serves as a reference implementation for modern cloud-native practices on Google Cloud Platform (GCP). It evolves from a simple local Docker setup to a highly available, secure, and observable system running on GKE.
 
-### Evolution Overview
+## How It Works: Time Travel
 
-The repository has grown from a simple local Docker setup to a comprehensive cloud-native reference implementation.
-
-- **Baseline Tag**: The starting point (simple Go app + Docker Compose).
-- **Main Branch**: The finished state (GKE, Cloud SQL, Cloud Deploy, Observability).
-
-### Key Insights
-
-1.  **Documentation First**: The largest growth area was **Documentation (+695%)**. This reflects the educational nature of the project, with detailed guides for every milestone.
-2.  **Infrastructure Complexity**: **IaC grew by 25x** (64 to 1,714 lines). This illustrates the reality of cloud-native engineering: the application code is often the tip of the iceberg compared to the infrastructure code required to run it reliably.
-3.  **Application Maturity**: The application code doubled in size (+114%) to support production features like:
-    *   Prometheus instrumentation
-    *   Structured logging
-    *   Cloud Trace integration
-    *   Robustness patterns (retries, circuit breakers)
-    *   Security headers (CSP)
-
-### Visualization
-
-![Codebase Evolution Across Milestones](docs/repo_evolution.png)
-
-The chart above visualizes the step-by-step growth of the repository. You can see the "Infrastructure" (green) and "Documentation" (orange) layers expanding with each milestone, while the "Application Code" (blue) grows more gradually as we add features like metrics and tracing.
-
-### Conclusion
-
-Transforming a "minimum viable system (more than one component)" into a production-ready system requires a significant investment in infrastructure and documentation. In this project, for every line of application code, we wrote approximately **2 lines of Infrastructure as Code** and **3.5 lines of Documentation**.
-
-### Code Size Distribution: Baseline App Code vs. Rest of Production
-
-```mermaid
-pie
-    "Baseline App Code" : 392
-    "Rest of Production Code" : 5583
-```
-
-**Key Concepts Demonstrated:**
-*   **Infrastructure as Code**: Terraform for GKE, Cloud SQL, and IAM.
-*   **CI/CD**: GitHub Actions + Google Cloud Deploy for automated canary releases.
-*   **Security**: Workload Identity, Secret Manager, Cloud Armor WAF, and IAM Auth.
-*   **Observability**: Prometheus metrics, Cloud Trace, and SLO monitoring.
-*   **Robustness**: Circuit breakers, retries, and regional high availability.
-
-## Navigating the Journey
-
-This repository uses **Git Tags** to mark specific points in the productionization journey. You can check out any tag to see the code exactly as it was at that stage.
-
-**How to use tags:**
+Don't just see the finish line—see the journey. This repo uses **Git Tags** to let you step through the evolution of a service.
 
 1.  **List all tags:**
     ```bash
@@ -63,35 +18,62 @@ This repository uses **Git Tags** to mark specific points in the productionizati
     ```bash
     git checkout tags/milestone-base-infra
     ```
+    *See the code exactly as it was when we first added Kubernetes.*
 3.  **Return to the latest version:**
     ```bash
     git checkout main
     ```
 
+## Architecture: The Final State
 
+This is what you will have built by the end of the journey:
 
----
+```mermaid
+graph LR
+    User((User)) -->|HTTPS| GLB[Global Load Balancer]
+    GLB -->|Cloud Armor| GKE[GKE Cluster]
+    subgraph "GCP Region"
+        GKE -->|Service| App[Go App]
+        App -->|SQL Auth| DB[(Cloud SQL)]
+        App -->|Metrics| Prom[Prometheus]
+    end
+    Dev[Developer] -->|Git Push| CD[Cloud Deploy]
+    CD -->|Canary| GKE
+```
 
-## Baseline Application
+## Key Insights: The Iceberg
 
-If you want to run the simple, local version of the app (without any cloud dependencies), please refer to **[Milestone 0: Baseline Application](docs/00_BASELINE.md)**.
+Transforming a "minimum viable system" into a production-ready system requires a significant investment in infrastructure and documentation.
 
-The `main` branch contains cloud-specific code that will not run locally without GCP credentials.
+*   **Infrastructure > Code**: For every 1 line of application code, we wrote **2 lines of Infrastructure as Code** and **3.5 lines of Documentation**.
+*   **Hidden Complexity**: IaC grew by **25x** from start to finish. (See [Full Analysis](docs/REPO_ANALYSIS.md))
 
-## Technologies Used
+```mermaid
+pie
+    "Baseline App Code" : 392
+    "Rest of Production Code" : 5583
+```
 
-*   **Backend**: Go
-*   **Database**: PostgreSQL (Cloud SQL with HA + Read Replica)
-*   **Containerization**: Docker, Docker Compose
-*   **Frontend**: HTML, CSS, JavaScript (served statically)
-*   **Cloud**: Google Cloud Platform (GKE, Cloud SQL, Artifact Registry, Cloud Deploy)
-*   **Authentication**: Workload Identity, Cloud SQL IAM Authentication
-*   **Robustness**: cenkalti/backoff, sony/gobreaker
-*   **Observability**: Prometheus, Cloud Monitoring
+![Codebase Evolution Across Milestones](docs/repo_evolution.png)
+
+## Quick Start
+
+1.  **Run Locally (No Cloud):**
+    If you just want to run the app on your machine:
+    ```bash
+    git checkout tags/baseline
+    cd app
+    docker-compose up
+    ```
+    See [Milestone 0 Docs](docs/00_BASELINE.md) for details.
+
+2.  **Explore the "Finished" Production State:**
+    The `main` branch contains the full cloud-native implementation.
+    *   **IaC**: Check `terraform/` to see how GKE, SQL, and IAM are provisioned.
+    *   **K8s**: Check `k8s/` for manifests including HPA, Ingress, and Monitoring.
+    *   **CI/CD**: Check `clouddeploy.yaml` and `.github/workflows`.
 
 ## Milestones
-
-Each milestone represents a specific tag in the git history. You can checkout these tags to see the code at that stage.
 
 | Milestone | Tag | Description |
 | :--- | :--- | :--- |
@@ -102,104 +84,33 @@ Each milestone represents a specific tag in the git history. You can checkout th
 | **4. IAM Auth** | `milestone-iam-auth` | Workload Identity, Cloud SQL IAM Auth. [Docs](docs/04_IAM_AUTH_AND_SECRETS.md) |
 | **5. Security** | `milestone-security-hardening` | Cloud Armor WAF, HTTPS, CSP. [Docs](docs/05_SECURITY_HARDENING.md) |
 | **6. Advanced Deploy** | `milestone-advanced-deployment` | Cloud Deploy, Canary releases. [Docs](docs/06_ADVANCED_DEPLOYMENT.md) |
-| **7. Observability & Robustness** | `milestone-observability-metrics`, `milestone-resilience-slos` | Prometheus, PITR, Circuit breakers, SLOs. [Docs](docs/07_OBSERVABILITY_METRICS.md), [Docs](docs/08_ROBUSTNESS_SLOS.md) |
+| **7. Observability** | `milestone-observability-metrics` | Prometheus, PITR, Circuit breakers. [Docs](docs/07_OBSERVABILITY_METRICS.md) |
 | **8. Tracing** | `milestone-tracing-polish` | Cloud Trace integration. [Docs](docs/09_TRACING_AND_POLISH.md) |
 
-See **[Milestone 0: Baseline Application](docs/00_BASELINE.md)** for instructions on running the local development version.
+## Reliability & Operations
 
-See **[Runbook](docs/RUNBOOK.md)** for operational procedures.
+We focus heavily on Day 2 operations and reliability.
 
-## Reliability & Security Plan
+*   **[Strategy & Risks](docs/STRATEGY_AND_RISKS.md)**: Comprehensive risk assessment and mitigation plan.
+*   **[Runbook](docs/RUNBOOK.md)**: Operational procedures, debugging guides, and incident response.
 
-### Risk Matrix
+**Top Risks Mitigated:**
+*   ✅ **Bad Deployment**: Mitigated via Canary Releases.
+*   ✅ **Single Zone Failure**: Mitigated via Regional GKE & HA Cloud SQL.
+*   ✅ **DDoS**: Mitigated via Cloud Armor WAF.
 
-#### Infrastructure & Reliability Risks
-| Risk Category | Specific Risk | Prob (1-3) | Imp (1-4) | Score | Status | Existing Mitigation | Proposed Mitigation |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Self-Imposed** | Bad Deployment | High (3) | High (3) | **9** | ✅ | Canary (Cloud Deploy) | **Automated Rollback on SLO Breach** |
-| **Self-Imposed** | Manual Config Drift | High (3) | Med (2) | **6** | ❌ | *None* | **GitOps (ArgoCD) + Policy as Code** |
-| **Infra Failure** | Single Zone Failure | Med (2) | High (3) | **6** | ✅ | Regional GKE, HA Cloud SQL | **N/A (Already Mitigated)** |
-| **Infra Failure** | Quota Exhaustion | Med (2) | High (3) | **6** | ❌ | *None* | **Quota Monitoring & Alerts** |
-| **Self-Imposed** | Terraform State Conflict | Med (2) | Med (2) | **4** | ✅ | GCS Backend | **State Locking / Atlantis** |
-| **Infra Failure** | Region Failure | Low (1) | Catastrophic (4) | **4** | ❌ | *None* | **Multi-Region Deployment** |
-| **Infra Failure** | Billing Spike | Low (1) | High (3) | **3** | ❌ | *None* | **Budget Alerts + Cap Enforcement** |
-| **Infra Failure** | Cloud Provider Failure | V.Low (0.5) | Catastrophic (4) | **2** | ❌ | *None* | **Multi-Cloud Strategy** |
+**Future Goals:**
+*   **Automated Compliance**: Ensure zero-drift infrastructure where the running state always matches the repository (GitOps).
+*   **Developer Experience**: Simplify service discovery and ownership tracking via a centralized catalog (Internal Developer Platform).
 
-#### Security & Attack Risks
-| Risk Category | Specific Risk | Prob (1-3) | Imp (1-4) | Score | Status | Existing Mitigation | Proposed Mitigation |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Attack** | DDoS / Web Attacks | Med (2) | High (3) | **6** | ✅ | Cloud Armor | **Strict WAF Rules + Rate Limiting** |
-| **Attack** | Dependency Vulnerabilities | Med (2) | High (3) | **6** | ❌ | *None* | **Dependabot + SCA Scanning** |
-| **Attack** | Secrets Leakage (Git) | Med (2) | High (3) | **6** | ❌ | *None* | **Pre-commit hooks + Secret Scanning** |
-| **Attack** | Insider Threat | Low (1) | Catastrophic (4) | **4** | ❌ | *None* | **Just-in-Time Access (JIT) + Audit Logs** |
-| **Attack** | Supply Chain Attack | Low (1) | High (3) | **3** | ❌ | *None* | **Container Scanning + SBOM** |
-| **Attack** | SQL Injection | Low (1) | High (3) | **3** | ✅ | Parameterized Queries | **N/A (Already Mitigated)** |
+## Technologies Used
 
-#### Data Integrity & Availability Risks
-| Risk Category | Specific Risk | Prob (1-3) | Imp (1-4) | Score | Status | Existing Mitigation | Proposed Mitigation |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Data** | Sensitive Data Leakage | Med (2) | High (3) | **6** | ❌ | *None* | **Structured Logging + Redaction** |
-| **Data** | Accidental DB Deletion | Low (1) | Catastrophic (4) | **4** | ✅ | PITR (Point-in-Time Recovery) | **Object Locks / Delete Protection** |
-| **Data** | Backup Restore Failure | Low (1) | Catastrophic (4) | **4** | ❌ | *None* | **Automated Restore Drills** |
-| **Data** | Ransomware / Corruption | Low (1) | High (3) | **3** | ❌ | *None* | **GCS Bucket Lock (Retention Policy)** |
+*   **Backend**: Go (Gin)
+*   **Database**: PostgreSQL (Cloud SQL HA)
+*   **Infrastructure**: Terraform, GKE, Kustomize
+*   **Observability**: Prometheus, Cloud Trace, Cloud Monitoring
+*   **Security**: Workload Identity, Cloud Armor, Secret Manager
 
-### Detailed Mitigation Plan
+## Testing
 
-#### 1. Reduce Blast Radius of Self-Imposed Changes
-**Goal**: Prevent "fat finger" errors and ensure infrastructure matches code.
-
-*   **GitOps (ArgoCD)**: Move from push-based (Cloud Deploy) to pull-based (ArgoCD). This ensures the cluster state always matches git. Any manual change is immediately reverted by the controller.
-*   **Policy as Code (OPA/Gatekeeper)**: Enforce rules like "No public LoadBalancers" or "Must have resource limits" before deployment.
-*   **Automated Rollback**: Hook up Cloud Monitoring alerts (SLO Burn Rate) to Cloud Deploy to trigger an automatic rollback if error budget burns too fast.
-
-#### 2. Mitigate Infrastructure Failures
-**Goal**: Survive larger outages (Region level).
-
-*   **Multi-Region**: Replicate the stack to `us-east1`.
-    *   Use Global Load Balancer (GLB) to route traffic.
-    *   Use Cloud SQL Cross-Region Read Replicas.
-    *   *Note*: This doubles infrastructure cost.
-
-#### 3. Security Hardening
-**Goal**: Reduce attack surface.
-
-*   **Container Scanning**: Enable Artifact Registry Vulnerability Scanning. Block deployments with Critical vulnerabilities.
-*   **WAF Tuning**: Explicitly define Cloud Armor rules in Terraform (if not already) to block common OWASP attacks.
-
-### Proposed New Milestones
-
-#### 10. GitOps & Automation (`milestone-gitops`)
-**Goal**: Eliminate "ClickOps" and ensure the cluster state always matches the git repository.
-*   **Scope**:
-    *   Install ArgoCD.
-    *   Migrate from Cloud Deploy to ArgoCD (Pull-based).
-    *   Implement OPA/Gatekeeper for Policy as Code.
-    *   Configure Automated Rollbacks based on Prometheus Alerts.
-
-#### 11. Supply Chain Security (`milestone-supply-chain`)
-**Goal**: Secure the build and deployment pipeline.
-*   **Scope**:
-    *   Enable Artifact Registry Vulnerability Scanning.
-    *   Generate SBOMs (Software Bill of Materials) in CI.
-    *   Sign images with Cosign / Sigstore.
-    *   Enforce "Binary Authorization" (only signed images can run).
-
-#### 12. Multi-Region (`milestone-multi-region`)
-**Goal**: Achieve 99.99% availability and survive region-wide outages.
-*   **Scope**:
-    *   Replicate GKE cluster to `us-east1`.
-    *   Configure Cloud SQL Cross-Region Read Replicas.
-    *   Set up Global External Load Balancer (GCLB).
-    *   Implement DNS failover or Anycast IP.
-
-### Estimates & "Nines"
-
-*   **Current State**: ~99.9% (Regional HA). Downtime allowed: ~43m / month.
-*   **With Multi-Region**: ~99.99%. Downtime allowed: ~4m / month.
-*   **With GitOps + Auto-Rollback**: Reduces *Mean Time To Recovery (MTTR)* significantly, preserving the error budget.
-
-## Testing Strategy
-
-For a detailed breakdown of the testing strategy, including unit, integration, and chaos/resilience tests, refer to [docs/TESTING.md](docs/TESTING.md).
-
-
+For a detailed breakdown of the testing strategy, including unit, integration, and chaos/resilience tests, refer to **[docs/TESTING.md](docs/TESTING.md)**.
