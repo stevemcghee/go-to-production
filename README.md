@@ -135,7 +135,7 @@ xychart-beta
 
 The journey from a free hobby project to a production-ready enterprise app has clear "jumps" in cost:
 
-1.  **$0.00 → $6.00** (Milestone 02): Initial GKE cluster and a single small Cloud SQL instance were provisioned.
+1.  **$0.00 → $6.00** (Milestone 02 - Nov 20th): Initial GKE cluster and Cloud SQL provisioning. A sharp jump occurred here as we scaled the node pool from 1 to 2 nodes to provide sufficient CPU capacity for the application and its sidecars.
 2.  **$6.00 → $15.00** (Milestone 03): Added **High Availability (HA)** to Cloud SQL and a **Read Replica**. This is the single largest cost increase, prioritizing reliability over budget.
 3.  **$15.00 → $16.50** (Milestone 07-09): Enabled Cloud Trace and comprehensive logging. Ingested data volume adds a variable but steady cost.
 4.  **$16.50 → $17.00** (Milestone 10-11): Added management overhead (ArgoCD, Gatekeeper) and the GKE Backup service fee.
