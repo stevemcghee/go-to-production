@@ -2,20 +2,24 @@
 
 ## Rollback Procedures
 
-### Cloud Deploy Rollback (Preferred)
-If a bad release is detected, use Cloud Deploy to rollback to the previous release.
+### ArgoCD Rollback (GitOps - Preferred)
+Since the cluster state is managed via GitOps, the best way to rollback is to revert the commit in Git.
 
-1. **Identify the previous release**:
+1. **Revert the commit**:
    ```bash
-   gcloud deploy releases list --delivery-pipeline=todo-app-pipeline --region=us-central1
+   git revert [BAD_COMMIT_SHA]
+   git push origin main
    ```
-2. **Promote the previous release**:
+2. **Verify Sync**:
+   ArgoCD will detect the revert and sync the cluster back to the previous stable state within 3 minutes.
+3. **Manual Trigger** (if urgent):
    ```bash
-   gcloud deploy releases promote --release=[PREVIOUS_RELEASE_NAME] \
-     --delivery-pipeline=todo-app-pipeline \
-     --region=us-central1 \
-     --to-target=production
+   kubectl patch app todo-app -n argocd -p '{"metadata": {"annotations": {"argocd.argoproj.io/refresh": "hard"}}}' --type merge
    ```
+
+### Cloud Deploy Rollback (Legacy/Canary)
+If you are using Cloud Deploy for advanced canary rollouts (e.g., milestone 6), use the following:
+
 
 ### Manual Rollback (Emergency)
 If Cloud Deploy is unavailable, manually apply the previous Kubernetes manifests.
