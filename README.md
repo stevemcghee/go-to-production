@@ -126,8 +126,9 @@ This project currently costs approximately **$17.00 / day** to run in its fully 
 ```mermaid
 xychart-beta
     title "Daily Cost Evolution by Milestone"
-    x-axis ["M00", "M01", "M02", "M03", "M04", "M05", "M06", "M07", "M08", "M09", "M10", "M11"]
+    x-axis ["M00", "M01", "M02 (Nov 20)", "M03", "M04", "M05", "M06", "M07", "M08", "M09", "M10", "M11"]
     y-axis "Daily Cost ($)" 0 --> 20
+    bar [0, 0, 6, 15, 15, 15, 15, 15.5, 16, 16.5, 16.8, 17]
     line [0, 0, 6, 15, 15, 15, 15, 15.5, 16, 16.5, 16.8, 17]
 ```
 
