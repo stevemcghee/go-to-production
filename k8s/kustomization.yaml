@@ -1,0 +1,12 @@
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  - service.yaml
+  - hpa.yaml
+  - ingress.yaml
+  - managed-certificate.yaml
+  - backend-config.yaml
+  - policies/template-required-labels.yaml
+  - policies/constraint-ns-owner.yaml
+  - rollouts/analysis-smoke-test.yaml
+  - rollouts/todo-app-rollout.yaml
