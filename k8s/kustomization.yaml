@@ -15,7 +15,6 @@ resources:
   - policies/constraint-ns-owner.yaml
   - rollouts/analysis-smoke-test.yaml
   - rollouts/todo-app-rollout.yaml
-  - backup-plan.yaml
   - pdb.yaml
   - policies/template-disallow-latest.yaml
   - policies/constraint-no-latest-tag.yaml
