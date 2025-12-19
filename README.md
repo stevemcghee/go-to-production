@@ -125,11 +125,6 @@ This project currently costs approximately **$17.00 / day** to run in its fully 
 
 ![Daily Cost Evolution](docs/images/daily_cost_chart.png)
 
-> **Chart Legend:**
-> *   🟣 **Cloud SQL**: Regional HA Instance + Read Replica
-> *   🔵 **GKE & Compute**: Regional Cluster Fee + 6 Nodes
-> *   🟠 **Observability & Net**: Logging, Tracing, Backups, Load Balancer
-
 ### Cost Inflection Points
 
 The journey from a free hobby project to a production-ready enterprise app has clear "jumps" in cost:
