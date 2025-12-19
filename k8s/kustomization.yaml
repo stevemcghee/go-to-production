@@ -15,3 +15,8 @@ resources:
   - policies/constraint-ns-owner.yaml
   - rollouts/analysis-smoke-test.yaml
   - rollouts/todo-app-rollout.yaml
+
+images:
+  - name: todo-app-go
+    newName: us-central1-docker.pkg.dev/smcghee-todo-p15n-38a6/todo-app-go/todo-app-go
+    newTag: 7ef042998aae7c81d4d7b87cbc18b988da88085c
