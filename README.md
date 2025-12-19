@@ -88,6 +88,7 @@ pie
 | **8. Robustness** | `milestone-08-robustness-slos` | SLIs, SLOs, and Error Budgets. [Docs](docs/08_ROBUSTNESS_SLOS.md) |
 | **9. Tracing** | `milestone-09-tracing-polish` | Distributed tracing & dashboarding. [Docs](docs/09_TRACING_AND_POLISH.md) |
 | **10. GitOps** | `milestone-10-gitops` | ArgoCD & automated policy enforcement. [Docs](docs/10_GITOPS_AND_AUTOMATION.md) |
+| **11. Policy & Rollouts** | `milestone-11-policy-rollouts` | OPA Gatekeeper & Automated Rollbacks. [Docs](docs/11_POLICY_AND_ROLLOUTS.md) |
 
 ## Reliability & Operations
 

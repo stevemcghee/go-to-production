@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: smoke-test
+spec:
+  metrics:
+  - name: health-check
+    successCondition: result == "Successful"
+    provider:
+      job:
+        spec:
+          template:
+            spec:
+              containers:
+              - name: test
+                image: curlimages/curl
+                command: ["/bin/sh", "-c"]
+                args: ["curl -s -f http://todo-app-go-service:8080/healthz"]
+              restartPolicy: Never
+          backoffLimit: 1

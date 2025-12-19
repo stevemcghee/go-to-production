@@ -1,12 +1,12 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
 metadata:
   name: todo-app-go
   namespace: todo-app
   labels:
     app: todo-app-go
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: todo-app-go
@@ -28,7 +28,6 @@ spec:
             memory: "256Mi"
         ports:
         - containerPort: 8080
-        env: []
         livenessProbe:
           httpGet:
             path: /healthz
@@ -41,7 +40,6 @@ spec:
             port: 8080
           initialDelaySeconds: 5
           periodSeconds: 5
-
       - name: cloudsql-proxy
         image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
         args:
@@ -55,3 +53,13 @@ spec:
           requests:
             memory: "256Mi"
             cpu: "100m"
+  strategy:
+    canary:
+      analysis:
+        templates:
+        - templateName: smoke-test
+      steps:
+      - setWeight: 20
+      - pause: {duration: 1m}
+      - setWeight: 50
+      - pause: {duration: 1m}
