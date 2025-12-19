@@ -15,6 +15,12 @@ resources:
   - policies/constraint-ns-owner.yaml
   - rollouts/analysis-smoke-test.yaml
   - rollouts/todo-app-rollout.yaml
+  - backup-plan.yaml
+  - pdb.yaml
+  - policies/template-disallow-latest.yaml
+  - policies/constraint-no-latest-tag.yaml
+  - policies/template-required-resource-limits.yaml
+  - policies/constraint-resource-limits.yaml
 
 images:
   - name: todo-app-go

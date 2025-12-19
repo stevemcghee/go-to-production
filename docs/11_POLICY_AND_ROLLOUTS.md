@@ -18,11 +18,17 @@ We added two critical layers of safety to the production environment.
 *   **OPA Gatekeeper**: Implemented policy-as-code to enforce organizational standards.
     *   *Constraint Template*: Generic logic to require labels.
     *   *Constraint*: Specifically requiring an `owner` label on all Namespaces.
-    *   *Benefit*: Prevents "shadow IT" and ensures all resources are properly attributed.
+    *   *Disallow :latest*: Enforces that all images use a specific tag or digest.
+    *   *Resource Limits*: Mandatory CPU/Memory limits for all containers.
+    *   *Benefit*: Prevents "shadow IT", ensures cost predictability, and enables deterministic rollbacks.
 *   **Argo Rollouts**: Replaced standard Deployments with advanced Canary Rollouts.
     *   *Automatic Analysis*: Every deployment triggers a "Smoke Test" job.
     *   *Automated Rollback*: If the smoke test fails (e.g., app returns 500), Argo Rollouts automatically aborts the deployment and rolls back to the stable version.
     *   *Benefit*: Reduces the impact of "broken" code reaching production.
+*   **Infrastructure Reliability (GKE Best Practices)**:
+    *   **Pod Disruption Budget (PDB)**: Ensures at least one replica is always available during cluster maintenance or node upgrades.
+    *   **Backup for GKE**: Re-enabled automated daily backups of the `todo-app` namespace.
+    *   **Maintenance Windows**: Defined a daily maintenance window (3 AM UTC) to minimize impact during automated GKE upgrades.
 
 ## 3. Pitfalls & Considerations
 

@@ -137,6 +137,12 @@ resource "google_container_cluster" "primary" {
     services_ipv4_cidr_block = "/22"
   }
 
+  maintenance_policy {
+    daily_maintenance_window {
+      start_time = "03:00" # 3 AM UTC
+    }
+  }
+
   # Enable Cloud Logging for container logs
   # Enable Cloud Logging for container logs
   logging_config {
