@@ -5,6 +5,14 @@ terraform {
     google = {
       source = "hashicorp/google"
     }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.10"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.10"
+    }
   }
   backend "gcs" {
     bucket = "tf-state-smcghee-todo-p15n-38a6"
@@ -16,6 +24,22 @@ terraform {
 provider "google" {
   project = var.project_id
   region  = var.region
+}
+
+data "google_client_config" "default" {}
+
+provider "kubernetes" {
+  host                   = "https://${google_container_cluster.primary.endpoint}"
+  token                  = data.google_client_config.default.access_token
+  cluster_ca_certificate = base64decode(google_container_cluster.primary.master_auth[0].cluster_ca_certificate)
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = "https://${google_container_cluster.primary.endpoint}"
+    token                  = data.google_client_config.default.access_token
+    cluster_ca_certificate = base64decode(google_container_cluster.primary.master_auth[0].cluster_ca_certificate)
+  }
 }
 
 # Enable necessary Google Cloud APIs
@@ -91,6 +115,12 @@ resource "google_project_service" "cloudtrace_api" {
   disable_on_destroy = false
 }
 
+resource "google_project_service" "gkebackup_api" {
+  project = var.project_id
+  service = "gkebackup.googleapis.com"
+  disable_on_destroy = false
+}
+
 # Create a GKE cluster
 resource "google_container_cluster" "primary" {
   name                     = var.cluster_name
@@ -130,6 +160,12 @@ resource "google_container_cluster" "primary" {
 
   workload_identity_config {
     workload_pool = "${var.project_id}.svc.id.goog"
+  }
+
+  addons_config {
+    gke_backup_agent_config {
+      enabled = true
+    }
   }
 }
 
