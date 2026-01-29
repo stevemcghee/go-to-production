@@ -14,6 +14,10 @@
 
 This repository serves as a reference implementation for modern cloud-native practices on Google Cloud Platform (GCP). It evolves from a simple local Docker setup to a highly available, secure, and observable system running on GKE.
 
+This is my response to frameworks and sample code that end with "now just take this to production":
+
+![1767983445143](https://github.com/user-attachments/assets/b718643c-73a2-4dbf-87af-369b84c4ffb3)
+
 ## How It Works: Time Travel
 
 Don't just see the finish line—see the journey. This repo uses **Git Tags** to let you step through the evolution of a service.
