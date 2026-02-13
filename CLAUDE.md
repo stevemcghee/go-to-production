@@ -159,10 +159,48 @@ They are addressed across Milestones 14 – 16 below.
 
 **Docs:** `docs/16_COST_OPTIMIZATION.md`
 
-### Stretch: Milestone 17 — Multi-Cloud & Edge
+### Milestone 17: Multi-Cloud Active-Active (`milestone-17-multi-cloud`)
 
-Addresses the lowest-scoring risk (Cloud Provider Failure, score 2).
-Not planned for near-term work. Documented in `docs/STRATEGY_AND_RISKS.md`.
+> Goal: Survive a total GCP outage with an active-active deployment on AWS.
+
+| Deliverable | Details |
+|-------------|---------|
+| AWS parallel stack | EKS + Aurora PG via `terraform/aws/` |
+| Cross-cloud replication | CDC (Debezium) or PostgreSQL logical replication |
+| DNS failover | Cloudflare (external to both clouds) |
+| Unified observability | Metrics aggregated across providers |
+| Edge delivery | Static assets on Cloudflare Pages/Workers |
+
+**Docs:** `docs/17_MULTI_CLOUD.md`
+
+### Aspirational: Extreme Reliability — Milestones 18–22
+
+> *"The Apollo guidance computer had triple-redundant hardware, N-version
+> software, and voting logic. These milestones apply the same philosophy to
+> cloud services."*
+
+| # | Milestone | Goal | Key Principle |
+|---|-----------|------|---------------|
+| 18 | N-Version Redundancy | Survive bugs in your own code | Independent implementations fail independently |
+| 19 | Autonomous Self-Healing | MTTR → zero (remove humans from recovery) | If a runbook step can be scripted, automate it |
+| 20 | Cell-Based Architecture | Blast radius → 1/N of users | No single failure affects everyone |
+| 21 | Formal Verification | Replace "tested" with "proved" | Testing finds bugs; proofs eliminate classes of bugs |
+| 22 | Digital Twin | Never deploy an untested change | The DR environment that isn't tested isn't reliable |
+
+**Docs:** `docs/18_EXTREME_RELIABILITY.md`
+
+### The Reliability Ladder
+
+| Level | Availability | What Fails You |
+|-------|-------------|----------------|
+| Regional HA (M3) | ~99.9% | Zone failure |
+| Multi-Region (M13) | ~99.99% | Region failure |
+| Multi-Cloud (M17) | ~99.999% | Provider failure |
+| N-Version (M18) | ~99.9999% | Software bugs |
+| Self-Healing (M19) | MTTR → 0 | Human response time |
+| Cells (M20) | Blast → 1/N | Correlated failures |
+| Formal Verification (M21) | Provable | Incorrect assumptions |
+| Digital Twin (M22) | Pre-validated | Untested deployments |
 
 ---
 

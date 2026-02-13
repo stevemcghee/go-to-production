@@ -106,6 +106,8 @@ pie
 | **14. Operational Resilience** | `milestone-14-operational-resilience` | Log redaction, quota alerts, budget caps, backup drills, audit. [Docs](docs/14_OPERATIONAL_RESILIENCE.md) |
 | **15. Adv. Observability** | `milestone-15-advanced-observability` | Trace-log correlation, business SLIs, Chaos Mesh, playbooks. [Docs](docs/15_ADVANCED_OBSERVABILITY.md) |
 | **16. Cost Optimization** | `milestone-16-cost-optimization` | Autoscaling tuning, right-sizing, CUDs, cost dashboard. [Docs](docs/16_COST_OPTIMIZATION.md) |
+| **17. Multi-Cloud** | `milestone-17-multi-cloud` | Active-active GCP + AWS, cross-cloud replication, Cloudflare DNS. [Docs](docs/17_MULTI_CLOUD.md) |
+| **18–22. Extreme** | — | N-version redundancy, self-healing, cell architecture, formal verification, digital twin. [Docs](docs/18_EXTREME_RELIABILITY.md) |
 
 ## Reliability & Operations
 
@@ -127,6 +129,19 @@ We focus heavily on Day 2 operations and reliability.
 **Future Goals:**
 *   **Automated Compliance**: Ensure zero-drift infrastructure where the running state always matches the repository (GitOps).
 *   **Developer Experience**: Simplify service discovery and ownership tracking via a centralized catalog (Internal Developer Platform).
+
+**Aspirational — The Apollo Program for Cloud:**
+
+> *No single cloud. No single codebase. No single point of failure at any layer — including the software itself.*
+
+*   **Multi-Cloud Active-Active**: GCP + AWS serving traffic simultaneously; survive a total provider outage (M17).
+*   **N-Version Redundancy**: Two independent API implementations (Go + Rust) with a comparison proxy — independent implementations fail independently (M18).
+*   **Autonomous Self-Healing**: Gray failure detection + a Kubernetes Operator that runs the runbook automatically — MTTR approaches zero (M19).
+*   **Cell-Based Architecture**: Shuffle-sharded user isolation — a catastrophic failure affects 1/N of users, not 100% (M20).
+*   **Formal Verification**: TLA+ specs and property-based testing — proving correctness, not just testing for it (M21).
+*   **Digital Twin**: Production-identical shadow environment validated against real traffic — no change reaches production untested (M22).
+
+See the full [Extreme Reliability roadmap](docs/18_EXTREME_RELIABILITY.md) and the [Reliability Ladder](docs/STRATEGY_AND_RISKS.md#estimates--nines) for how each milestone moves the needle from 99.9% to provably correct.
 
 ## GitHub & Repository Settings
 

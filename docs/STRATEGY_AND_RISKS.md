@@ -138,18 +138,102 @@ This document details the risk analysis, mitigation strategies, and future roadm
     *   Resource label hygiene
 *   See: [docs/16_COST_OPTIMIZATION.md](16_COST_OPTIMIZATION.md)
 
-#### 17. Multi-Cloud & Edge (`milestone-17-multi-cloud`) — Stretch
-**Goal**: Eliminate vendor lock-in and minimize latency globally.
+#### 17. Multi-Cloud Active-Active (`milestone-17-multi-cloud`)
+**Goal**: Eliminate single-provider dependency with an active-active deployment across GCP and AWS.
 *   **Scope**:
-    *   Deploy static assets to Cloudflare Workers / Pages or similar.
-    *   Deploy optional backup stack to AWS (EKS + RDS).
-    *   Use Multi-Cloud Service Mesh or DNS-based weighting.
-*   *Note*: Addresses the lowest-scoring risk (Cloud Provider Failure, score 2).
-    Planned only if all prior milestones are complete.
+    *   Deploy parallel EKS + Aurora stack on AWS
+    *   Cross-cloud data replication (CDC / logical replication)
+    *   DNS-based traffic management via Cloudflare (external to both clouds)
+    *   Unified observability across providers
+    *   Edge delivery for static assets (Cloudflare Pages / Workers)
+*   See: [docs/17_MULTI_CLOUD.md](17_MULTI_CLOUD.md)
 
+### Aspirational: Extreme Reliability (Milestones 18–22)
+
+> *Inspired by the Apollo program: triple-redundant hardware, N-version software,
+> voting logic, and the conviction that no single anything is acceptable.*
+
+These milestones push beyond industry-standard cloud practices into the territory
+of aviation, space flight, and safety-critical systems. See
+[docs/18_EXTREME_RELIABILITY.md](18_EXTREME_RELIABILITY.md) for full details.
+
+#### 18. N-Version Redundancy (`milestone-18-n-version`)
+**Goal**: Survive bugs in your own code by running independent implementations.
+*   **Scope**:
+    *   Second implementation of the API in Rust (or another language)
+    *   Comparison proxy: fan-out writes to both, detect divergence
+    *   Reimplement critical dependencies (SQL driver, circuit breaker) from scratch
+    *   Vendored + hash-locked dependency tree
+*   **Principle**: Independent implementations fail independently.
+
+#### 19. Autonomous Self-Healing (`milestone-19-self-healing`)
+**Goal**: Reduce MTTR to zero by removing humans from the recovery path.
+*   **Scope**:
+    *   Gray failure detection (semantic health checks, not just liveness)
+    *   Kubernetes Operator for automated remediation (restart, scale, rollback)
+    *   Closed-loop SLO automation (burn rate → auto-action)
+    *   Continuous chaos validation of self-healing behavior
+*   **Principle**: If a runbook step can be scripted, it should be automated.
+
+#### 20. Cell-Based Architecture (`milestone-20-cell-architecture`)
+**Goal**: Limit blast radius to 1/N of users for any failure mode.
+*   **Scope**:
+    *   Shuffle sharding — assign users to isolated cells by consistent hash
+    *   Cell provisioning via parameterized Terraform modules
+    *   Cell-level isolation (separate projects or namespaces with NetworkPolicy)
+    *   Cell-aware progressive deployment (canary cell → all cells)
+    *   Cell draining and user migration
+*   **Principle**: AWS, Azure, and Google run their own services this way.
+
+#### 21. Formal Verification & Provable Correctness (`milestone-21-formal-verification`)
+**Goal**: Replace "we tested it" with "we proved it" for critical code paths.
+*   **Scope**:
+    *   TLA+ / Alloy specifications for circuit breaker and replication state machines
+    *   Property-based testing (thousands of random input sequences)
+    *   Deterministic, bit-for-bit reproducible builds
+    *   Cryptographic build provenance (SLSA Level 4)
+*   **Principle**: Testing proves the presence of bugs, never their absence.
+
+#### 22. Digital Twin & Continuous Validation (`milestone-22-digital-twin`)
+**Goal**: Never deploy an untested change by validating against real traffic first.
+*   **Scope**:
+    *   Production-identical shadow environment receiving mirrored traffic
+    *   Continuous SLO comparison (twin vs. production)
+    *   Pre-deployment gate: changes must pass twin bake before production
+    *   Twin doubles as a warm DR environment, always ready for failover
+*   **Principle**: The DR environment that isn't continuously tested isn't reliable.
+
+---
+
+### Extended Risk Matrix: Extreme Reliability
+
+These risks are only addressable by the aspirational milestones above.
+
+#### Systemic & Correlated Failure Risks
+| Risk Category | Specific Risk | Prob (1-3) | Imp (1-4) | Score | Status | Proposed Mitigation |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Software** | Bug in primary codebase | Med (2) | High (3) | **6** | ❌ → M18 | **N-version redundancy** |
+| **Software** | Compromised dependency | Low (1) | Catastrophic (4) | **4** | ❌ → M18 | **Reimplemented + hash-locked deps** |
+| **Operational** | Slow human incident response | Med (2) | High (3) | **6** | ❌ → M19 | **Autonomous self-healing** |
+| **Operational** | Gray failure (partial degradation) | Med (2) | Med (2) | **4** | ❌ → M19 | **Semantic health checks** |
+| **Systemic** | Correlated failure across users | Low (1) | Catastrophic (4) | **4** | ❌ → M20 | **Cell-based architecture** |
+| **Systemic** | Untested deployment in production | Med (2) | High (3) | **6** | ❌ → M22 | **Digital twin pre-validation** |
+| **Software** | Incorrect assumptions in logic | Low (1) | High (3) | **3** | ❌ → M21 | **Formal verification** |
 
 ### Estimates & "Nines"
 
-*   **Current State**: ~99.9% (Regional HA). Downtime allowed: ~43m / month.
-*   **With Multi-Region**: ~99.99%. Downtime allowed: ~4m / month.
+| State | Availability | Downtime / Month | What Fails You |
+|-------|-------------|------------------|----------------|
+| **Current** (Regional HA) | ~99.9% | ~43 minutes | Zone failure |
+| **+ Multi-Region** (M13) | ~99.99% | ~4 minutes | Region failure |
+| **+ Multi-Cloud** (M17) | ~99.999% | ~26 seconds | Cloud provider failure |
+| **+ N-Version** (M18) | ~99.9999% | ~2.6 seconds | Software bugs |
+| **+ Self-Healing** (M19) | MTTR → 0 | Seconds (automated) | Human response time |
+| **+ Cell Architecture** (M20) | Blast → 1/N | Impact ÷ N cells | Correlated failures |
+| **+ Formal Verification** (M21) | Provable paths | Eliminates classes of bugs | Incorrect assumptions |
+| **+ Digital Twin** (M22) | Pre-validated | Zero surprise deployments | Untested changes |
+
+> At the end of this ladder, remaining risks are: acts of God, fundamental
+> physics, and budget approval.
+
 *   **With GitOps + Auto-Rollback**: Reduces *Mean Time To Recovery (MTTR)* significantly, preserving the error budget.
