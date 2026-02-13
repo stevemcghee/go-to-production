@@ -102,6 +102,10 @@ pie
 | **10. GitOps** | `milestone-10-gitops` | ArgoCD & automated policy enforcement. [Docs](docs/10_GITOPS_AND_AUTOMATION.md) |
 | **11. Policy & Rollouts** | `milestone-11-policy-rollouts` | OPA Gatekeeper & Automated Rollbacks. [Docs](docs/11_POLICY_AND_ROLLOUTS.md) |
 | **12. Supply Chain** | `milestone-12-supply-chain` | Vulnerability scanning, Cosign signing, Binary Authorization. [Docs](docs/12_SUPPLY_CHAIN_SECURITY.md) |
+| **13. Multi-Region** | `milestone-13-multi-region` | Multi-region GKE, Cloud SQL replica, Global LB. [Docs](docs/13_MULTI_REGION_PLAN.md) |
+| **14. Operational Resilience** | `milestone-14-operational-resilience` | Log redaction, quota alerts, budget caps, backup drills, audit. [Docs](docs/14_OPERATIONAL_RESILIENCE.md) |
+| **15. Adv. Observability** | `milestone-15-advanced-observability` | Trace-log correlation, business SLIs, Chaos Mesh, playbooks. [Docs](docs/15_ADVANCED_OBSERVABILITY.md) |
+| **16. Cost Optimization** | `milestone-16-cost-optimization` | Autoscaling tuning, right-sizing, CUDs, cost dashboard. [Docs](docs/16_COST_OPTIMIZATION.md) |
 
 ## Reliability & Operations
 
@@ -114,6 +118,11 @@ We focus heavily on Day 2 operations and reliability.
 *   ✅ **Bad Deployment**: Mitigated via Canary Releases.
 *   ✅ **Single Zone Failure**: Mitigated via Regional GKE & HA Cloud SQL.
 *   ✅ **DDoS**: Mitigated via Cloud Armor WAF.
+
+**Open Risks (Planned):**
+*   **Quota Exhaustion & Billing Spikes**: Monitoring alerts + budget caps (Milestone 14).
+*   **Sensitive Data Leakage**: Structured logging with PII redaction (Milestone 14).
+*   **Backup Validation**: Automated monthly restore drills (Milestone 14).
 
 **Future Goals:**
 *   **Automated Compliance**: Ensure zero-drift infrastructure where the running state always matches the repository (GitOps).

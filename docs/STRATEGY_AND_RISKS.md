@@ -12,11 +12,11 @@ This document details the risk analysis, mitigation strategies, and future roadm
 | **Self-Imposed** | Bad Deployment | High (3) | High (3) | **9** | ✅ | Argo Rollouts + Automated Rollback | **N/A (Already Mitigated)** |
 | **Self-Imposed** | Manual Config Drift | High (3) | Med (2) | **6** | ✅ | ArgoCD + OPA Gatekeeper | **N/A (Already Mitigated)** |
 | **Infra Failure** | Single Zone Failure | Med (2) | High (3) | **6** | ✅ | Regional GKE, HA Cloud SQL | **N/A (Already Mitigated)** |
-| **Infra Failure** | Quota Exhaustion | Med (2) | High (3) | **6** | ❌ | *None* | **Quota Monitoring & Alerts** |
+| **Infra Failure** | Quota Exhaustion | Med (2) | High (3) | **6** | ❌ → Milestone 14 | *None* | **Quota Monitoring & Alerts** |
 | **Self-Imposed** | Terraform State Conflict | Med (2) | Med (2) | **4** | ✅ | GCS Backend | **State Locking / Atlantis** |
-| **Infra Failure** | Region Failure | Low (1) | Catastrophic (4) | **4** | ❌ | *None* | **Multi-Region Deployment** |
-| **Infra Failure** | Billing Spike | Low (1) | High (3) | **3** | ❌ | *None* | **Budget Alerts + Cap Enforcement** |
-| **Infra Failure** | Cloud Provider Failure | V.Low (0.5) | Catastrophic (4) | **2** | ❌ | *None* | **Multi-Cloud Strategy** |
+| **Infra Failure** | Region Failure | Low (1) | Catastrophic (4) | **4** | 🔶 Milestone 13 (partial) | Multi-region infra deployed | **Verify failover + DNS** |
+| **Infra Failure** | Billing Spike | Low (1) | High (3) | **3** | ❌ → Milestone 14 | *None* | **Budget Alerts + Cap Enforcement** |
+| **Infra Failure** | Cloud Provider Failure | V.Low (0.5) | Catastrophic (4) | **2** | ❌ → Stretch (M17) | *None* | **Multi-Cloud Strategy** |
 
 #### Security & Attack Risks
 | Risk Category | Specific Risk | Prob (1-3) | Imp (1-4) | Score | Status | Existing Mitigation | Proposed Mitigation |
@@ -24,17 +24,17 @@ This document details the risk analysis, mitigation strategies, and future roadm
 | **Attack** | DDoS / Web Attacks | Med (2) | High (3) | **6** | ✅ | Cloud Armor | **Strict WAF Rules + Rate Limiting** |
 | **Attack** | Dependency Vulnerabilities | Med (2) | High (3) | **6** | ✅ | Dependabot + Artifact Registry Scanning | **N/A (Already Mitigated)** |
 | **Attack** | Secrets Leakage (Git) | Med (2) | High (3) | **6** | ✅ | Pre-commit hooks (gitleaks) | **N/A (Already Mitigated)** |
-| **Attack** | Insider Threat | Low (1) | Catastrophic (4) | **4** | ❌ | *None* | **Just-in-Time Access (JIT) + Audit Logs** |
+| **Attack** | Insider Threat | Low (1) | Catastrophic (4) | **4** | ❌ → Milestone 14 | *None* | **Just-in-Time Access (JIT) + Audit Logs** |
 | **Attack** | Supply Chain Attack | Low (1) | High (3) | **3** | ✅ | Cosign Signing + Binary Authorization | **N/A (Already Mitigated)** |
 | **Attack** | SQL Injection | Low (1) | High (3) | **3** | ✅ | Parameterized Queries | **N/A (Already Mitigated)** |
 
 #### Data Integrity & Availability Risks
 | Risk Category | Specific Risk | Prob (1-3) | Imp (1-4) | Score | Status | Existing Mitigation | Proposed Mitigation |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Data** | Sensitive Data Leakage | Med (2) | High (3) | **6** | ❌ | *None* | **Structured Logging + Redaction** |
+| **Data** | Sensitive Data Leakage | Med (2) | High (3) | **6** | ❌ → Milestone 14 | *None* | **Structured Logging + Redaction** |
 | **Data** | Accidental DB Deletion | Low (1) | Catastrophic (4) | **4** | ✅ | PITR (Point-in-Time Recovery) | **Object Locks / Delete Protection** |
-| **Data** | Backup Restore Failure | Low (1) | Catastrophic (4) | **4** | ❌ | *None* | **Automated Restore Drills** |
-| **Data** | Ransomware / Corruption | Low (1) | High (3) | **3** | ❌ | *None* | **GCS Bucket Lock (Retention Policy)** |
+| **Data** | Backup Restore Failure | Low (1) | Catastrophic (4) | **4** | ❌ → Milestone 14 | *None* | **Automated Restore Drills** |
+| **Data** | Ransomware / Corruption | Low (1) | High (3) | **3** | ❌ → Milestone 14 | *None* | **GCS Bucket Lock (Retention Policy)** |
 
 ### Detailed Mitigation Plan
 
@@ -87,39 +87,65 @@ This document details the risk analysis, mitigation strategies, and future roadm
     *   ✅ Whitelisted infrastructure images (ArgoCD, Cloud SQL Proxy, etc.)
     *   ✅ Removed Cloud Deploy from CI/CD (GitOps-only)
 
-### Proposed Future Milestones
+### In-Progress Milestones
 
-#### 13. Multi-Region (`milestone-13-multi-region`)
+#### 🔶 13. Multi-Region (`milestone-13-multi-region`)
 **Goal**: Achieve 99.99% availability and survive region-wide outages.
-*   **Scope**:
-    *   Replicate GKE cluster to `us-east1`
-    *   Configure Cloud SQL Cross-Region Read Replicas
-    *   Set up Global External Load Balancer (GCLB)
-    *   Implement DNS failover or Anycast IP
-    *   *Note*: This will approximately double infrastructure costs
+**Status**: Infrastructure deployed. Verification and failover drill remaining.
+*   **Completed**:
+    *   ✅ GKE cluster replicated to `us-east1`
+    *   ✅ Cloud SQL Cross-Region Read Replica provisioned
+    *   ✅ Multi-Cluster Ingress with static IP (`34.160.71.244`)
+    *   ✅ ArgoCD managing both clusters
+*   **Remaining**:
+    *   ❌ Verify DB replication lag and connectivity
+    *   ❌ Application config for region-aware DB routing
+    *   ❌ DNS: point `todo.smig.dev` → `34.160.71.244`
+    *   ❌ Verify traffic routes to nearest region
+    *   ❌ Failover drill (drain us-central1, validate us-east1)
+    *   ❌ Update RUNBOOK.md to mark region failure mitigated
+*   See: [docs/13_MULTI_REGION_PLAN.md](13_MULTI_REGION_PLAN.md)
 
-#### 14. Advanced Observability (`milestone-14-advanced-observability`)
-**Goal**: Implement comprehensive observability and chaos engineering.
-*   **Scope**:
-    *   Implement distributed tracing correlation with logs
-    *   Add custom SLIs for business metrics
-    *   Set up chaos engineering experiments (Chaos Mesh)
-    *   Implement automated incident response playbooks
+### Planned Future Milestones
 
-#### 15. Cost Optimization (`milestone-15-cost-optimization`)
-**Goal**: Optimize cloud spending without sacrificing reliability.
+#### 14. Operational Resilience (`milestone-14-operational-resilience`)
+**Goal**: Close the six highest-priority open risks in the risk matrix.
 *   **Scope**:
-    *   Implement GKE Autopilot or cluster autoscaling
-    *   Right-size Cloud SQL instances based on actual usage
-    *   Implement committed use discounts
-    *   Add cost anomaly detection and alerts
+    *   Structured logging + PII redaction (Sensitive Data Leakage — score 6)
+    *   Quota monitoring & alerts (Quota Exhaustion — score 6)
+    *   Budget alerts + spending cap (Billing Spike — score 3)
+    *   Automated backup restore drill (Backup Restore Failure — score 4)
+    *   GCS bucket lock & retention (Ransomware / Corruption — score 3)
+    *   Audit log sink + IAM hardening (Insider Threat — score 4)
+*   See: [docs/14_OPERATIONAL_RESILIENCE.md](14_OPERATIONAL_RESILIENCE.md)
 
-#### 16. Multi-Cloud & Edge (`milestone-16-multi-cloud`)
+#### 15. Advanced Observability (`milestone-15-advanced-observability`)
+**Goal**: Deep observability, chaos engineering, and incident automation.
+*   **Scope**:
+    *   Trace ↔ log correlation (inject `trace_id` into structured logs)
+    *   Custom business SLIs (domain-level health metrics)
+    *   Chaos Mesh deployment and experiment definitions
+    *   Incident response playbooks (codified in `docs/playbooks/`)
+*   See: [docs/15_ADVANCED_OBSERVABILITY.md](15_ADVANCED_OBSERVABILITY.md)
+
+#### 16. Cost Optimization (`milestone-16-cost-optimization`)
+**Goal**: Right-size infrastructure and prevent cost surprises.
+*   **Scope**:
+    *   GKE autoscaling tuning (cluster autoscaler or Autopilot evaluation)
+    *   Cloud SQL right-sizing based on actual usage
+    *   Committed Use Discount analysis
+    *   Cost anomaly detection and dashboard
+    *   Resource label hygiene
+*   See: [docs/16_COST_OPTIMIZATION.md](16_COST_OPTIMIZATION.md)
+
+#### 17. Multi-Cloud & Edge (`milestone-17-multi-cloud`) — Stretch
 **Goal**: Eliminate vendor lock-in and minimize latency globally.
 *   **Scope**:
     *   Deploy static assets to Cloudflare Workers / Pages or similar.
     *   Deploy optional backup stack to AWS (EKS + RDS).
     *   Use Multi-Cloud Service Mesh or DNS-based weighting.
+*   *Note*: Addresses the lowest-scoring risk (Cloud Provider Failure, score 2).
+    Planned only if all prior milestones are complete.
 
 
 ### Estimates & "Nines"

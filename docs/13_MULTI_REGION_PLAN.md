@@ -55,6 +55,107 @@ This document outlines the detailed plan to expand the `todo-app-go` implementat
     2.  Verify `us-east1` handles load.
     3.  (Advanced) Promote `us-east1` DB to primary and verify write capability.
 
+## Verification Playbook
+
+Use this playbook to complete the remaining Phase 2, 4, and 5 items.
+
+### V1. Verify DB Replication (Phase 2)
+
+```bash
+# 1. Check replication status and lag
+gcloud sql instances describe todo-app-db-replica \
+  --format="yaml(replicaConfiguration,replicationCluster)"
+
+# 2. Check replication lag metric in Cloud Monitoring
+gcloud monitoring metrics list --filter="metric.type=cloudsql.googleapis.com/database/replication/replica_lag"
+
+# 3. Functional test: insert a row on primary, verify it appears on replica
+#    (connect via Cloud SQL Proxy on separate ports)
+PGPASSWORD=<password> psql -h 127.0.0.1 -p 5432 -U todo-app-sa -d todo-app \
+  -c "INSERT INTO todos (task, completed) VALUES ('replication-test', false);"
+
+# Wait a few seconds for replication
+sleep 5
+
+PGPASSWORD=<password> psql -h 127.0.0.1 -p 5433 -U todo-app-sa -d todo-app \
+  -c "SELECT * FROM todos WHERE task = 'replication-test';"
+
+# 4. Clean up
+PGPASSWORD=<password> psql -h 127.0.0.1 -p 5432 -U todo-app-sa -d todo-app \
+  -c "DELETE FROM todos WHERE task = 'replication-test';"
+```
+
+**Pass criteria:** Replica returns the test row within 10 seconds.
+
+### V2. Verify DNS & Traffic Routing (Phase 4-5)
+
+```bash
+# 1. Check the MCI static IP is assigned
+kubectl get mci -n todo-app todo-app-ingress-global -o jsonpath='{.status.VIP}'
+# Expected: 34.160.71.244
+
+# 2. After DNS update — verify resolution
+dig todo.smig.dev +short
+# Expected: 34.160.71.244
+
+# 3. Check traffic reaches both backends
+#    (run from different regions or use curl with --resolve)
+curl -s -o /dev/null -w "%{http_code} %{time_total}s" https://todo.smig.dev/healthz
+
+# 4. Verify backend health on the GLB
+gcloud compute backend-services get-health todo-app-backend-service --global
+```
+
+### V3. Failover Drill (Phase 5)
+
+> **WARNING:** This drill will cause brief user-facing impact. Run during a
+> maintenance window and notify stakeholders.
+
+```bash
+# === PRE-DRILL ===
+# 1. Record baseline metrics
+kubectl --context=gke_PROJECT_us-central1_todo-cluster get pods -n todo-app
+kubectl --context=gke_PROJECT_us-east1_todo-cluster-east get pods -n todo-app
+
+# 2. Start monitoring SLO dashboard in a separate tab
+
+# === EXECUTE DRILL ===
+# 3. Drain us-central1 traffic by scaling replicas to 0
+kubectl --context=gke_PROJECT_us-central1_todo-cluster \
+  scale rollout todo-app-go --replicas=0 -n todo-app
+
+# 4. Wait 60 seconds for GLB health checks to detect the change
+
+# 5. Verify us-east1 is serving traffic
+curl -s -o /dev/null -w "%{http_code}" https://todo.smig.dev/healthz
+# Expected: 200
+
+# 6. Verify reads work (writes go to us-central1 primary — may fail or have latency)
+curl -s https://todo.smig.dev/todos | jq length
+
+# === ADVANCED: DB PROMOTION (optional) ===
+# 7. Promote read replica to primary (DESTRUCTIVE — breaks replication)
+# gcloud sql instances promote-replica todo-app-db-replica
+# Then update us-east1 app config to point writes to the new primary
+
+# === RESTORE ===
+# 8. Scale us-central1 back up
+kubectl --context=gke_PROJECT_us-central1_todo-cluster \
+  scale rollout todo-app-go --replicas=2 -n todo-app
+
+# 9. Wait for GLB to re-include us-central1 backends
+
+# === POST-DRILL ===
+# 10. Record SLO impact — did we stay within error budget?
+# 11. Document findings in an incident report (even though planned)
+```
+
+**Pass criteria:**
+- `us-east1` returns HTTP 200 within 90 seconds of draining `us-central1`.
+- Read requests succeed from `us-east1`.
+- SLO burn rate stays below fast-burn threshold during the drill.
+- Restore completes and both regions are healthy within 5 minutes.
+
 ## Risks & Mitigations
 - **Data Consistency**: Cross-region replication has latency. Strong consistency for writes is maintained by always writing to primary, but reads from replica might be stale.
 - **Cost**: Doubling the infrastructure will double the compute/DB costs.
