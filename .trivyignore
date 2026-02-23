@@ -1,0 +1,5 @@
+# golang.org/x/crypto/ssh/agent vulnerabilities — this project does not use SSH.
+# These are transitive dependencies only. Update golang.org/x/crypto when feasible.
+CVE-2025-47913
+CVE-2025-47914
+CVE-2025-58181

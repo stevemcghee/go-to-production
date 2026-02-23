@@ -271,7 +271,7 @@ func InitDB(config DBConfig) {
 
 	// ===== PRIMARY DATABASE CONNECTION =====
 	// The primary database handles all writes and serves as fallback for reads
-	connStr := fmt.Sprintf("postgres://%s:dummy-password@%s:%s/%s?sslmode=disable", dbUser, dbHost, dbPort, dbName)
+	connStr := fmt.Sprintf("postgres://%s:dummy-password@%s:%s/%s?sslmode=disable", dbUser, dbHost, dbPort, dbName) // #nosec G101 -- placeholder for Cloud SQL IAM auth
 	slog.Info("Connecting to PRIMARY database", "url", connStr)
 
 	// Use longer retry timeout for initial connection (allows Cloud SQL Proxy to start)
@@ -306,7 +306,7 @@ func InitDB(config DBConfig) {
 			dbReadPort = dbPort
 		}
 
-		readConnStr := fmt.Sprintf("postgres://%s:dummy-password@%s:%s/%s?sslmode=disable", dbUser, dbReadHost, dbReadPort, dbName)
+		readConnStr := fmt.Sprintf("postgres://%s:dummy-password@%s:%s/%s?sslmode=disable", dbUser, dbReadHost, dbReadPort, dbName) // #nosec G101 -- placeholder for Cloud SQL IAM auth
 		slog.Info("Connecting to READ REPLICA", "url", readConnStr)
 
 		opRead := func() error {
