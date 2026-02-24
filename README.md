@@ -12,53 +12,88 @@
 
 ## Purpose
 
-This repository serves as a reference implementation for modern cloud-native practices on Google Cloud Platform (GCP). It evolves from a simple local Docker setup to a highly available, secure, and observable system running on GKE.
+This repository is a reference implementation for taking a service to production.
+It evolves a simple Go todo app from a local Docker setup to a highly available,
+secure, observable, multi-region system — and then keeps going toward
+Apollo-program-grade reliability.
 
 This is my response to frameworks and sample code that end with "now just take this to production":
 
 ![1767983445143](https://github.com/user-attachments/assets/b718643c-73a2-4dbf-87af-369b84c4ffb3)
 
+### What You'll Learn
+
+*   How to provision production infrastructure with **Terraform** (GKE, Cloud SQL, IAM, networking)
+*   How to secure a service end-to-end: **Workload Identity, Cloud Armor WAF, Binary Authorization, Cosign signing**
+*   How to observe a service: **Prometheus metrics, OpenTelemetry tracing, SLOs, burn-rate alerting**
+*   How to deploy safely: **ArgoCD GitOps, Argo Rollouts canary, OPA Gatekeeper policy enforcement**
+*   How to make a service robust: **circuit breakers, exponential backoff, read replicas, failover**
+*   How to think about reliability at scale: **multi-region, multi-cloud, cell architecture, formal verification**
+
+## Quick Start
+
+**Run Locally (No Cloud):**
+```bash
+git checkout tags/milestone-00-baseline
+docker-compose up
+```
+See [Milestone 0 Docs](docs/00_BASELINE.md) for details.
+
+**Explore the Production State:**
+The `main` branch contains the full cloud-native implementation.
+*   **Infrastructure**: `terraform/` — GKE, Cloud SQL, IAM, monitoring, security policies
+*   **Kubernetes**: `k8s/` — Kustomize base + region overlays, Argo Rollouts, Gatekeeper policies
+*   **CI/CD**: `.github/workflows/build-test.yml` — build, test, sign, scan, push
+*   **GitOps**: `argocd-todo-app.yaml` — ArgoCD sync for multi-cluster deployment
+
 ## How It Works: Time Travel
 
-Don't just see the finish line—see the journey. This repo uses **Git Tags** to let you step through the evolution of a service.
+This repo uses **Git Tags** to let you step through the evolution of a service.
 
-1.  **List all tags:**
-    ```bash
-    git tag -l
-    ```
-2.  **Checkout a specific milestone:**
-    ```bash
-    git checkout tags/milestone-02-base-infra
-    ```
-    *See the code exactly as it was when we first added Kubernetes.*
-3.  **Return to the latest version:**
-    ```bash
-    git checkout main
-    ```
+```bash
+git tag -l                                    # List all milestones
+git checkout tags/milestone-02-base-infra     # See the code at that point
+git checkout main                             # Return to latest
+```
 
-## Architecture: The Final State
+## Architecture
 
-This is what you will have built by the end of the journey:
+Current production state: multi-region, GitOps-managed, with canary deployments.
 
 ```mermaid
 graph LR
     User((User)) -->|HTTPS| GLB[Global Load Balancer]
-    GLB -->|Cloud Armor| GKE[GKE Cluster]
-    subgraph "GCP Region"
-        GKE -->|Service| App[Go App]
-        App -->|SQL Auth| DB[(Cloud SQL)]
-        App -->|Metrics| Prom[Prometheus]
+    GLB -->|Cloud Armor| MCI[Multi-Cluster Ingress]
+
+    subgraph "us-central1 (Primary)"
+        MCI -->|route| GKE1[GKE Cluster]
+        GKE1 --> App1[Go App]
+        App1 -->|writes| DB1[(Cloud SQL Primary)]
+        App1 -->|reads| DBR1[(Read Replica)]
+        App1 -->|metrics| Prom1[Prometheus]
     end
-    Dev[Developer] -->|Git Push| CD[Cloud Deploy]
-    CD -->|Canary| GKE
+
+    subgraph "us-east1 (Secondary)"
+        MCI -->|route| GKE2[GKE Cluster]
+        GKE2 --> App2[Go App]
+        App2 -->|reads| DBR2[(Read Replica)]
+    end
+
+    DB1 -.->|replication| DBR2
+
+    Dev[Developer] -->|git push| Git[GitHub]
+    Git -->|sync| Argo[ArgoCD]
+    Argo -->|deploy| GKE1
+    Argo -->|deploy| GKE2
 ```
 
-## Key Insights: The Iceberg
+## The Iceberg: Infrastructure > Code
 
-Transforming a "minimum viable system" into a production-ready system requires a significant investment in infrastructure and documentation.
+Transforming a toy app into a production system requires a massive investment
+in infrastructure and documentation.
 
-*   **Infrastructure > Code**: For every 1 line of application code, we wrote **2 lines of Infrastructure as Code** and **3.5 lines of Documentation**.
-*   **Hidden Complexity**: IaC grew by **25x** from start to finish. (See [Full Analysis](docs/REPO_ANALYSIS.md))
+*   For every **1 line** of application code, we wrote **2 lines of Infrastructure as Code** and **3.5 lines of Documentation**.
+*   IaC grew by **25x** from start to finish. ([Full Analysis](docs/REPO_ANALYSIS.md))
 
 ```mermaid
 pie
@@ -68,101 +103,97 @@ pie
 
 ![Codebase Evolution Across Milestones](docs/repo_evolution.png)
 
-## Quick Start
-
-1.  **Run Locally (No Cloud):**
-    If you just want to run the app on your machine:
-    ```bash
-    git checkout tags/milestone-00-baseline
-    cd app
-    docker-compose up
-    ```
-    See [Milestone 0 Docs](docs/00_BASELINE.md) for details.
-
-2.  **Explore the "Finished" Production State:**
-    The `main` branch contains the full cloud-native implementation.
-    *   **IaC**: Check `terraform/` to see how GKE, SQL, and IAM are provisioned.
-    *   **K8s**: Check `k8s/` for manifests including HPA, Ingress, and Monitoring.
-    *   **CI/CD**: Check `clouddeploy.yaml` and `.github/workflows`.
-
 ## Milestones
 
-| Milestone | Tag | Description |
-| :--- | :--- | :--- |
-| **0. Baseline** | `milestone-00-baseline` | Simple Go app + Docker Compose. [Docs](docs/00_BASELINE.md) |
-| **1. Risk Analysis** | `milestone-01-risk-analysis` | Risk mitigation & implementation plans. [Docs](docs/01_RISK_ANALYSIS.md) |
-| **2. Base Infra** | `milestone-02-base-infra` | GKE, Cloud SQL, CI/CD pipeline. [Docs](docs/02_BASE_INFRASTRUCTURE.md) |
-| **3. HA & Scale** | `milestone-03-ha-scale` | Regional GKE, HA Cloud SQL, HPA. [Docs](docs/03_HA_SCALABILITY.md) |
-| **4. IAM Auth** | `milestone-04-iam-auth` | Workload Identity, Cloud SQL IAM Auth. [Docs](docs/04_IAM_AUTH_AND_SECRETS.md) |
-| **5. Security** | `milestone-05-security-hardening` | Cloud Armor WAF, HTTPS, CSP. [Docs](docs/05_SECURITY_HARDENING.md) |
-| **6. Advanced Deploy** | `milestone-06-advanced-deployment` | Cloud Deploy, Canary releases. [Docs](docs/06_ADVANCED_DEPLOYMENT.md) |
-| **7. Observability** | `milestone-07-observability-metrics` | Prometheus metrics & managed collectors. [Docs](docs/07_OBSERVABILITY_METRICS.md) |
-| **8. Robustness** | `milestone-08-robustness-slos` | SLIs, SLOs, and Error Budgets. [Docs](docs/08_ROBUSTNESS_SLOS.md) |
-| **9. Tracing** | `milestone-09-tracing-polish` | Distributed tracing & dashboarding. [Docs](docs/09_TRACING_AND_POLISH.md) |
-| **10. GitOps** | `milestone-10-gitops` | ArgoCD & automated policy enforcement. [Docs](docs/10_GITOPS_AND_AUTOMATION.md) |
-| **11. Policy & Rollouts** | `milestone-11-policy-rollouts` | OPA Gatekeeper & Automated Rollbacks. [Docs](docs/11_POLICY_AND_ROLLOUTS.md) |
-| **12. Supply Chain** | `milestone-12-supply-chain` | Vulnerability scanning, Cosign signing, Binary Authorization. [Docs](docs/12_SUPPLY_CHAIN_SECURITY.md) |
+### Completed (0–12)
+
+| # | Milestone | Tag | What It Adds |
+|:--|:----------|:----|:-------------|
+| 0 | Baseline | `milestone-00-baseline` | Go app + Docker Compose. [Docs](docs/00_BASELINE.md) |
+| 1 | Risk Analysis | `milestone-01-risk-analysis` | Risk matrix & implementation plan. [Docs](docs/01_RISK_ANALYSIS.md) |
+| 2 | Base Infra | `milestone-02-base-infra` | GKE, Cloud SQL, CI/CD. [Docs](docs/02_BASE_INFRASTRUCTURE.md) |
+| 3 | HA & Scale | `milestone-03-ha-scale` | Regional GKE, HA Cloud SQL, HPA. [Docs](docs/03_HA_SCALABILITY.md) |
+| 4 | IAM Auth | `milestone-04-iam-auth` | Workload Identity, Cloud SQL IAM Auth. [Docs](docs/04_IAM_AUTH_AND_SECRETS.md) |
+| 5 | Security | `milestone-05-security-hardening` | Cloud Armor WAF, HTTPS, CSP. [Docs](docs/05_SECURITY_HARDENING.md) |
+| 6 | Adv. Deploy | `milestone-06-advanced-deployment` | Cloud Deploy, canary releases. [Docs](docs/06_ADVANCED_DEPLOYMENT.md) |
+| 7 | Observability | `milestone-07-observability-metrics` | Prometheus metrics. [Docs](docs/07_OBSERVABILITY_METRICS.md) |
+| 8 | Robustness | `milestone-08-robustness-slos` | Circuit breakers, SLOs, error budgets. [Docs](docs/08_ROBUSTNESS_SLOS.md) |
+| 9 | Tracing | `milestone-09-tracing-polish` | OpenTelemetry + Cloud Trace. [Docs](docs/09_TRACING_AND_POLISH.md) |
+| 10 | GitOps | `milestone-10-gitops` | ArgoCD, Dependabot, secret scanning. [Docs](docs/10_GITOPS_AND_AUTOMATION.md) |
+| 11 | Policy | `milestone-11-policy-rollouts` | OPA Gatekeeper, Argo Rollouts, PDB. [Docs](docs/11_POLICY_AND_ROLLOUTS.md) |
+| 12 | Supply Chain | `milestone-12-supply-chain` | Cosign signing, Binary Authorization. [Docs](docs/12_SUPPLY_CHAIN_SECURITY.md) |
+
+### In Progress
+
+| # | Milestone | Status | What It Adds |
+|:--|:----------|:-------|:-------------|
+| 13 | Multi-Region | Infra deployed; verification remaining | Second GKE cluster, Cloud SQL replica, Multi-Cluster Ingress. [Docs](docs/13_MULTI_REGION_PLAN.md) |
+
+### Planned (14–16)
+
+| # | Milestone | What It Adds |
+|:--|:----------|:-------------|
+| 14 | Operational Resilience | Log redaction, quota alerts, budget caps, backup drills, audit. [Docs](docs/14_OPERATIONAL_RESILIENCE.md) |
+| 15 | Adv. Observability | Trace-log correlation, business SLIs, Chaos Mesh, playbooks. [Docs](docs/15_ADVANCED_OBSERVABILITY.md) |
+| 16 | Cost Optimization | Autoscaling tuning, right-sizing, CUDs, cost dashboard. [Docs](docs/16_COST_OPTIMIZATION.md) |
+
+### Aspirational: The Apollo Program for Cloud (17–22)
+
+> *No single cloud. No single codebase. No single point of failure at any layer — including the software itself.*
+
+| # | Milestone | Goal |
+|:--|:----------|:-----|
+| 17 | [Multi-Cloud Active-Active](docs/17_MULTI_CLOUD.md) | GCP + AWS serving traffic simultaneously; survive a total provider outage |
+| 18 | [N-Version Redundancy](docs/18_EXTREME_RELIABILITY.md) | Two independent API implementations (Go + Rust) with a comparison proxy |
+| 19 | [Autonomous Self-Healing](docs/18_EXTREME_RELIABILITY.md) | Gray failure detection + Kubernetes Operator that runs the runbook automatically |
+| 20 | [Cell-Based Architecture](docs/18_EXTREME_RELIABILITY.md) | Shuffle-sharded user isolation — blast radius = 1/N |
+| 21 | [Formal Verification](docs/18_EXTREME_RELIABILITY.md) | TLA+ specs, property-based testing, deterministic reproducible builds |
+| 22 | [Digital Twin](docs/18_EXTREME_RELIABILITY.md) | Shadow environment validated against real traffic; pre-deployment gate |
+
+See the [Reliability Ladder](docs/STRATEGY_AND_RISKS.md#estimates--nines) for how each milestone moves the needle from 99.9% to provably correct.
 
 ## Reliability & Operations
 
-We focus heavily on Day 2 operations and reliability.
+*   **[Strategy & Risks](docs/STRATEGY_AND_RISKS.md)**: Risk matrix with mitigation status for every identified risk.
+*   **[Runbook](docs/RUNBOOK.md)**: Rollback procedures, troubleshooting, disaster recovery, chaos experiments.
 
-*   **[Strategy & Risks](docs/STRATEGY_AND_RISKS.md)**: Comprehensive risk assessment and mitigation plan.
-*   **[Runbook](docs/RUNBOOK.md)**: Operational procedures, debugging guides, and incident response.
+**Risks Mitigated:** Bad deployments (canary + rollback), zone failure (regional HA), DDoS (Cloud Armor), supply chain (Cosign + Binary Auth), secrets leakage (gitleaks), config drift (ArgoCD + Gatekeeper).
 
-**Top Risks Mitigated:**
-*   ✅ **Bad Deployment**: Mitigated via Canary Releases.
-*   ✅ **Single Zone Failure**: Mitigated via Regional GKE & HA Cloud SQL.
-*   ✅ **DDoS**: Mitigated via Cloud Armor WAF.
-
-**Future Goals:**
-*   **Automated Compliance**: Ensure zero-drift infrastructure where the running state always matches the repository (GitOps).
-*   **Developer Experience**: Simplify service discovery and ownership tracking via a centralized catalog (Internal Developer Platform).
-
-## GitHub & Repository Settings
-
-> **Note on Branch Protection:** You may notice that the `main` branch is not protected by Pull Request requirements. In a real production environment, branch protection is mandatory. However, for this **educational reference repo**, we have left it unprotected to allow you to push milestone updates directly and follow the journey without the overhead of manual PR approvals for every step.
+**Open Risks (Milestone 14):** Quota exhaustion, billing spikes, sensitive data in logs, backup restore validation, insider threat, ransomware.
 
 ## Estimated Daily Costs
 
-This project currently costs approximately **$17.00 / day** to run in its fully production-ready state. Below is the breakdown and how our milestones influenced this cost curve.
-
-| Category | Est. Daily Cost | Details |
-| :--- | :--- | :--- |
-| **GKE Management** | $2.40 | Fixed cluster management fee for a regional cluster. |
-| **Compute Nodes** | ~$4.80 | 6x `e2-medium` nodes (2 per zone in a 3-zone regional cluster). |
-| **Networking** | ~$1.20 | Global External Load Balancer + Data Transfer. |
-| **Observability** | ~$2.40 | Cloud Logging, Cloud Trace, and GKE Backup ingestion. |
-| **Cloud SQL** | ~$6.20 | Regional HA Instance + Read Replica. |
-| **Total** | **~$17.00** | |
+| Phase | Est. Daily Cost | What Changed |
+|:------|:----------------|:-------------|
+| Baseline (M0) | $0.00 | Local Docker only |
+| Base Infra (M2) | ~$6.00 | GKE + Cloud SQL provisioned |
+| HA & Scale (M3) | ~$15.00 | Regional GKE (3 zones), HA Cloud SQL + replica |
+| Observability (M7–9) | ~$16.50 | Cloud Trace, logging volume |
+| GitOps + Policy (M10–11) | **~$17.00** | ArgoCD, Gatekeeper, GKE Backup |
+| Multi-Region (M13) | **~$34.00** | Second cluster + replica (est.) |
 
 ![Daily Cost Evolution](docs/images/daily_cost_chart.png)
 
-### Cost Inflection Points
+## Technologies
 
-The journey from a free hobby project to a production-ready enterprise app has clear "jumps" in cost:
-
-1.  **$0.00 → $6.00** (Milestone 02 - Nov 20th): Initial GKE cluster and Cloud SQL provisioning. A sharp jump occurred here as we scaled the node pool from 1 to 2 nodes to provide sufficient CPU capacity for the application and its sidecars.
-2.  **$6.00 → $15.00** (Milestone 03): The "High Availability Jump." We moved from a Zonal to a **Regional GKE cluster**, which introduced the $0.10/hr management fee and tripled our node count (2 nodes per zone across 3 zones). Simultaneously, we upgraded Cloud SQL to a Regional HA configuration and added a Read Replica. This was our most significant investment in uptime and fault tolerance.
-3.  **$15.00 → $16.50** (Milestone 07-09): Enabled Cloud Trace and comprehensive logging. Ingested data volume adds a variable but steady cost.
-4.  **$16.50 → $17.00** (Milestone 10-11): Added management overhead (ArgoCD, Gatekeeper) and the GKE Backup service fee.
-
-## Technologies Used
-
-*   **Backend**: Go (Gin)
-*   **Database**: PostgreSQL (Cloud SQL HA)
+*   **Language**: Go 1.24 (standard library `net/http`)
+*   **Database**: PostgreSQL (Cloud SQL HA + read replica)
 *   **Infrastructure**: Terraform, GKE, Kustomize
-*   **Observability**: Prometheus, Cloud Trace, Cloud Monitoring
-*   **Security**: Workload Identity, Cloud Armor, Secret Manager
+*   **Deployment**: ArgoCD (GitOps), Argo Rollouts (canary)
+*   **Observability**: Prometheus, OpenTelemetry, Cloud Trace, Cloud Monitoring
+*   **Security**: Workload Identity, Cloud Armor, Binary Authorization, Cosign, OPA Gatekeeper, Secret Manager
 
 ## Testing
 
-For a detailed breakdown of the testing strategy, including unit, integration, and chaos/resilience tests, refer to **[docs/TESTING.md](docs/TESTING.md)**.
+Unit, integration, and chaos/resilience tests. See **[docs/TESTING.md](docs/TESTING.md)**.
+
+```bash
+go test -v ./...                  # All tests
+go test -v ./test/chaos/...       # Chaos tests only
+```
 
 ---
 
-## 🚀 Interactive SRE Simulation
+**[100 - Go To Space](https://stevemcghee.github.io/go-to-production/game/)** — interactive SRE simulation illustrating SLOs, error budgets, and infrastructure automation.
 
-Want to see SRE concepts in action? Try the **[100 - Go To Space](https://stevemcghee.github.io/go-to-production/game/)** interactive simulation! 
-
-This game illustrates the concepts of SLOs, Error Budgets, and Infrastructure automation featured in this repository.
+> **Note on Branch Protection:** This educational repo leaves `main` unprotected to allow direct milestone pushes. In production, branch protection is mandatory.

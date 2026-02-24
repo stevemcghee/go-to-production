@@ -385,11 +385,21 @@ A GKE Backup Plan has been configured to automatically back up all cluster resou
 
 #### Region Failure
 **Risk**: The entire `us-central1` region becomes unavailable.
-**Mitigation**: Currently **UNMITIGATED**. The application resides only in `us-central1`.
-**Recovery**:
-1.  Spin up infrastructure in a new region (e.g., `us-east1`) using Terraform (update `region` variable).
-2.  Restore Cloud SQL database from backup to the new region (Cross-Region Restore).
-3.  Update DNS to point to the new Load Balancer IP.
+**Mitigation**: **PARTIALLY MITIGATED** (Milestone 13). Multi-region infrastructure is deployed
+(`us-east1` GKE cluster, Cloud SQL read replica, Multi-Cluster Ingress). Failover drill
+and DNS cutover are pending verification — see [13_MULTI_REGION_PLAN.md](13_MULTI_REGION_PLAN.md#verification-playbook).
+
+**Automatic behavior**: The Global Load Balancer will stop routing traffic to unhealthy
+`us-central1` backends. `us-east1` backends will serve read traffic automatically.
+
+**Manual actions required for writes during region failure**:
+1.  **Promote the Cloud SQL replica** in `us-east1` to a standalone primary:
+    ```bash
+    gcloud sql instances promote-replica todo-app-db-replica
+    ```
+2.  **Update the app config** in `us-east1` to point writes to the newly promoted instance.
+3.  **Verify** write operations succeed: `curl -X POST https://todo.smig.dev/todos -d '{"task":"failover-test"}'`
+4.  **After primary region recovers**: Re-establish replication and revert the promotion.
 
 ### Database Restore
 
@@ -455,3 +465,126 @@ git push origin main
 1. Temporarily comment out the failing `helm_release` resource in Terraform.
 2. Run `terraform apply` to provision other critical resources (like IPs).
 3. Uncomment the resource and re-run `terraform apply`, or troubleshoot the specific cluster connectivity/resource limits causing the timeout.
+
+---
+
+## Planned Operational Procedures (Milestones 14–16)
+
+The following sections describe procedures that will be implemented in upcoming milestones.
+As each milestone is completed, move the relevant section above this header and remove the
+"planned" annotation.
+
+### Quota Exhaustion Alert Response (Milestone 14)
+
+**Trigger**: Cloud Monitoring alert "GCP Quota Usage > 80%".
+
+**Severity**: Warning (80%), Critical (95%).
+
+**Actions**:
+1. **Identify the quota** from the alert payload (e.g., `compute.googleapis.com/cpus`, `compute.googleapis.com/in_use_addresses`).
+2. **Check current usage**:
+   ```bash
+   gcloud compute project-info describe --project=PROJECT_ID \
+     --format="table(quotas.metric,quotas.usage,quotas.limit)" \
+     | grep -i <METRIC>
+   ```
+3. **Short-term**: If legitimate growth, request a quota increase:
+   ```bash
+   gcloud compute project-info update --project=PROJECT_ID \
+     --quota-increase-request
+   ```
+4. **Investigate**: If unexpected, check for runaway autoscalers, leaked resources, or
+   misconfigured Terraform that is over-provisioning.
+
+### Billing Spike Response (Milestone 14)
+
+**Trigger**: Cloud Billing budget alert at 50% / 80% / 100% of monthly budget.
+
+**Actions**:
+1. **Check the billing report** in Cloud Console → Billing → Reports.
+2. **Identify the cost driver** (usually Compute Engine or Cloud SQL).
+3. **If autoscaler runaway**: Check HPA status and cluster autoscaler logs.
+   ```bash
+   kubectl get hpa -n todo-app
+   kubectl logs -l component=cluster-autoscaler -n kube-system --tail=50
+   ```
+4. **If unexpected resource**: List all running instances and check for orphans:
+   ```bash
+   gcloud compute instances list --project=PROJECT_ID
+   gcloud sql instances list --project=PROJECT_ID
+   ```
+5. **Escalate** if 100% threshold is breached — consider scaling down non-critical
+   environments.
+
+### Backup Restore Drill (Milestone 14)
+
+**Schedule**: Monthly (1st of each month, 03:00 UTC, automated via CronJob).
+
+**What it does**:
+1. Clones the Cloud SQL instance to a temporary `todo-app-db-drill-YYYYMMDD` instance.
+2. Connects and runs `SELECT count(*) FROM todos` to verify data integrity.
+3. Deletes the temporary instance.
+4. Logs PASS/FAIL to Cloud Logging with label `drill=backup-restore`.
+
+**Manual trigger**:
+```bash
+kubectl create job --from=cronjob/backup-restore-drill drill-manual-$(date +%s) -n todo-app
+```
+
+**If the drill fails**:
+1. Check Cloud SQL instance status — is the primary healthy?
+2. Check PITR availability: `gcloud sql backups list --instance=todo-app-db-instance`
+3. Attempt manual restore (see "Database Restore" section above).
+4. If repeated failures, investigate Cloud SQL service health and open a support case.
+
+### Audit & Access Review (Milestone 14)
+
+**Schedule**: Quarterly.
+
+**Procedure**:
+1. **Review IAM bindings** for the project:
+   ```bash
+   gcloud projects get-iam-policy PROJECT_ID \
+     --format="table(bindings.role,bindings.members)" | sort
+   ```
+2. **Check for over-privileged accounts** — no user should have `roles/owner` in production.
+3. **Review audit logs** for suspicious `SetIamPolicy` events:
+   ```bash
+   gcloud logging read 'protoPayload.methodName="SetIamPolicy"' \
+     --project=PROJECT_ID --limit=20 --format=json
+   ```
+4. **Rotate service account keys** if any exist (prefer Workload Identity instead).
+5. **Document findings** and remediate any issues.
+
+### Chaos Experiment Procedure (Milestone 15)
+
+**Prerequisites**: Chaos Mesh installed, SLO monitoring active.
+
+**Steps**:
+1. **Select an experiment** from `test/chaos/experiments/`.
+2. **Notify stakeholders** and confirm maintenance window.
+3. **Start SLO recording** (note current error budget remaining).
+4. **Apply the experiment**:
+   ```bash
+   kubectl apply -f test/chaos/experiments/pod-kill.yaml
+   ```
+5. **Monitor** the SLO dashboard for 10–15 minutes.
+6. **Stop the experiment**:
+   ```bash
+   kubectl delete -f test/chaos/experiments/pod-kill.yaml
+   ```
+7. **Evaluate**: Did the system stay within SLO? Did circuit breakers activate correctly?
+8. **Document findings** in a brief post-experiment report.
+
+### Incident Response Playbooks (Milestone 15)
+
+Structured playbooks will be created in `docs/playbooks/`:
+- `high-error-rate.md` — triggered by fast-burn SLO alert
+- `database-unreachable.md` — triggered by circuit breaker open
+- `region-failover.md` — triggered by regional health check failure
+- `security-incident.md` — triggered by Cloud Armor block spike
+
+Each follows the format: Trigger → Severity → First Responder Actions → Investigation →
+Remediation → Escalation → Post-Incident.
+
+See [15_ADVANCED_OBSERVABILITY.md](15_ADVANCED_OBSERVABILITY.md) for full details.
