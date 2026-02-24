@@ -15,6 +15,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
@@ -23,11 +24,9 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	// Removed unused import: "github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sony/gobreaker"
 
 	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
-	// Removed unused import: "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -70,6 +69,21 @@ var (
 			Help: "Total number of todos deleted",
 		},
 	)
+
+	// DB routing metrics for multi-region observability
+	DBReadsTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "db_reads_total",
+			Help: "Total database read operations by source (replica or primary)",
+		},
+		[]string{"source"},
+	)
+	DBWritesTotal = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: "db_writes_total",
+			Help: "Total database write operations (always primary)",
+		},
+	)
 )
 
 // Todo represents a single todo item.
@@ -102,6 +116,33 @@ var (
 
 	BackoffStrategy backoff.BackOff // Global variable to allow injecting a custom backoff for testing
 )
+
+// ReadAfterWriteWindow controls how long reads are routed to primary after a write
+// to avoid stale reads from a replica with replication lag.
+var ReadAfterWriteWindow = 2 * time.Second
+
+// lastWriteTime tracks the most recent write operation timestamp.
+// After a write, reads are routed to primary for ReadAfterWriteWindow to ensure
+// read-after-write consistency across regions.
+var (
+	lastWriteTime time.Time
+	lastWriteMu   sync.RWMutex
+)
+
+// recordWrite marks the current time as the last write, used by read-after-write routing.
+func recordWrite() {
+	lastWriteMu.Lock()
+	lastWriteTime = time.Now()
+	lastWriteMu.Unlock()
+}
+
+// shouldReadFromPrimary returns true if a recent write means we should bypass
+// the replica to ensure read-after-write consistency.
+func shouldReadFromPrimary() bool {
+	lastWriteMu.RLock()
+	defer lastWriteMu.RUnlock()
+	return !lastWriteTime.IsZero() && time.Since(lastWriteTime) < ReadAfterWriteWindow
+}
 
 // Circuit Breaker provides fault tolerance by preventing requests to a failing service.
 // This protects the application from cascading failures when the database is consistently unavailable.
@@ -337,23 +378,56 @@ func InitDB(config DBConfig) {
 	}
 }
 
+// HealthzHandler responds to health checks. With Accept: application/json, it returns
+// detailed status including region, cluster, and per-pool DB health for debugging
+// multi-region routing. Without the header, it returns a simple "OK" for K8s probes.
 func HealthzHandler(w http.ResponseWriter, r *http.Request) {
 	if DB == nil {
 		http.Error(w, "Database connection not initialized", http.StatusInternalServerError)
 		return
 	}
-	if err := DB.Ping(); err != nil {
-		http.Error(w, "Database connection failed: "+err.Error(), http.StatusInternalServerError)
+
+	primaryErr := DB.Ping()
+	if primaryErr != nil {
+		http.Error(w, "Database connection failed: "+primaryErr.Error(), http.StatusInternalServerError)
 		return
 	}
-	// Check Read Replica too if distinct
-	if DBRead != DB && DBRead != nil {
+
+	replicaStatus := "same_as_primary"
+	if DBRead != nil && DBRead != DB {
 		if err := DBRead.Ping(); err != nil {
+			replicaStatus = "unhealthy: " + err.Error()
 			slog.Warn("Read Replica ping failed", "error", err)
-			// Don't fail health check if only read replica is down?
-			// Or maybe we should? For now, let's just log it.
+		} else {
+			replicaStatus = "healthy"
 		}
 	}
+
+	// Detailed JSON response for debugging multi-region routing
+	if r.Header.Get("Accept") == "application/json" {
+		readRouting := "replica"
+		if DBRead == DB {
+			readRouting = "primary"
+		}
+		if shouldReadFromPrimary() {
+			readRouting = "primary (read-after-write)"
+		}
+
+		resp := map[string]interface{}{
+			"status":          "ok",
+			"region":          os.Getenv("REGION"),
+			"cluster":         os.Getenv("CLUSTER_NAME"),
+			"primary_db":      "healthy",
+			"replica_db":      replicaStatus,
+			"read_routing":    readRouting,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			slog.Error("Failed to encode health check response", "error", err)
+		}
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 	if _, err := w.Write([]byte("OK")); err != nil {
 		slog.Error("Failed to write health check response", "error", err)
@@ -424,6 +498,9 @@ func HandleTodo(w http.ResponseWriter, r *http.Request) {
 // Uses DBRead (read replica) to offload SELECT queries from the primary database.
 // This improves performance and allows the primary to focus on writes.
 //
+// Read-after-write consistency: If a write occurred within ReadAfterWriteWindow,
+// reads are routed to primary to avoid stale data from replication lag.
+//
 // Robustness features:
 // - Automatic retries on transient errors (network blips, etc.)
 // - Circuit breaker prevents cascading failures
@@ -432,13 +509,25 @@ func GetTodos(w http.ResponseWriter, r *http.Request) {
 	var todos []Todo
 
 	err := ExecuteWithRobustness(func() error {
-		// Try read replica first
-		rows, err := DBRead.Query("SELECT id, task, completed FROM todos ORDER BY id")
-		if err != nil {
-			slog.Warn("Read replica failed, falling back to primary", "error", err)
-			// If read replica fails, fall back to primary
-			if DBRead != DB {
+		var rows *sql.Rows
+		var err error
+
+		// Route reads to primary if a recent write needs consistency
+		usePrimary := shouldReadFromPrimary()
+		if usePrimary || DBRead == DB {
+			if usePrimary {
+				slog.Debug("Read-after-write: routing read to primary for consistency")
+			}
+			rows, err = DB.Query("SELECT id, task, completed FROM todos ORDER BY id")
+			DBReadsTotal.WithLabelValues("primary").Inc()
+		} else {
+			rows, err = DBRead.Query("SELECT id, task, completed FROM todos ORDER BY id")
+			if err != nil {
+				slog.Warn("Read replica failed, falling back to primary", "error", err)
 				rows, err = DB.Query("SELECT id, task, completed FROM todos ORDER BY id")
+				DBReadsTotal.WithLabelValues("primary_fallback").Inc()
+			} else {
+				DBReadsTotal.WithLabelValues("replica").Inc()
 			}
 		}
 
@@ -499,6 +588,8 @@ func AddTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	recordWrite()
+	DBWritesTotal.Inc()
 	slog.Info("Successfully added todo", "id", t.ID, "task", t.Task)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -529,6 +620,8 @@ func UpdateTodo(w http.ResponseWriter, r *http.Request, id int) {
 		return
 	}
 
+	recordWrite()
+	DBWritesTotal.Inc()
 	w.WriteHeader(http.StatusOK)
 	TodosUpdated.Inc()
 }
@@ -548,6 +641,8 @@ func DeleteTodo(w http.ResponseWriter, r *http.Request, id int) {
 		return
 	}
 
+	recordWrite()
+	DBWritesTotal.Inc()
 	w.WriteHeader(http.StatusNoContent)
 	TodosDeleted.Inc()
 }
