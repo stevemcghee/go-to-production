@@ -164,10 +164,13 @@ kubectl logs -l app=todo-app-go -n todo-app | grep "Circuit Breaker state change
 
 **Recovery**: Circuit breaker auto-recovers when database becomes healthy. No manual intervention needed.
 
-### Read Replica
-Read queries (`GET /todos`) are automatically routed to a read replica for improved performance and availability.
+### Read Replica & Multi-Region DB Routing
+Read queries (`GET /todos`) are automatically routed to a read replica for improved performance
+and availability. The routing logic includes:
 
-**Failover**: If read replica is unavailable, application falls back to primary database automatically.
+- **Read-after-write consistency**: After any write (POST/PUT/DELETE), reads are routed to
+  primary for 2 seconds to avoid stale data from replication lag.
+- **Automatic failover**: If the read replica is unavailable, reads fall back to primary.
 
 **Verify Connection**:
 ```bash
@@ -175,6 +178,24 @@ Read queries (`GET /todos`) are automatically routed to a read replica for impro
 kubectl logs -l app=todo-app-go -n todo-app | grep "Successfully connected"
 # Should see: "Successfully connected to PRIMARY database"
 # AND: "Successfully connected to READ REPLICA"
+```
+
+**Monitor DB Routing** (via Prometheus metrics):
+```bash
+# Check which pool is serving reads
+curl -s <POD_IP>:8080/metrics | grep db_reads_total
+# db_reads_total{source="replica"}   — normal reads from replica
+# db_reads_total{source="primary"}   — reads routed to primary (read-after-write)
+# db_reads_total{source="primary_fallback"} — replica failed, fell back to primary
+
+# Check write volume
+curl -s <POD_IP>:8080/metrics | grep db_writes_total
+```
+
+**Detailed Health Check** (multi-region debugging):
+```bash
+# Returns JSON with region, cluster, DB pool status, and current read routing
+curl -H "Accept: application/json" https://todo.smig.dev/healthz
 ```
 
 ## Service Level Objectives (SLOs)
@@ -385,21 +406,85 @@ A GKE Backup Plan has been configured to automatically back up all cluster resou
 
 #### Region Failure
 **Risk**: The entire `us-central1` region becomes unavailable.
-**Mitigation**: **PARTIALLY MITIGATED** (Milestone 13). Multi-region infrastructure is deployed
-(`us-east1` GKE cluster, Cloud SQL read replica, Multi-Cluster Ingress). Failover drill
-and DNS cutover are pending verification — see [13_MULTI_REGION_PLAN.md](13_MULTI_REGION_PLAN.md#verification-playbook).
+**Mitigation**: **MITIGATED** (Milestone 13). Multi-region infrastructure deployed:
+- GKE clusters in `us-central1` (primary) and `us-east1` (secondary)
+- Cloud SQL primary in `us-central1` with read replica in `us-east1`
+- Multi-Cluster Ingress (MCI) with global load balancing
+- Region-aware DB routing with read-after-write consistency
 
-**Automatic behavior**: The Global Load Balancer will stop routing traffic to unhealthy
-`us-central1` backends. `us-east1` backends will serve read traffic automatically.
+**Automatic behavior**: The Global Load Balancer stops routing traffic to unhealthy
+`us-central1` backends. `us-east1` backends continue to serve **read traffic** automatically
+from the local read replica.
 
-**Manual actions required for writes during region failure**:
-1.  **Promote the Cloud SQL replica** in `us-east1` to a standalone primary:
+**Manual failover procedure for writes** (estimated time: 10–15 minutes):
+
+1.  **Confirm the outage** is regional (not just a zone or network blip):
     ```bash
-    gcloud sql instances promote-replica todo-app-db-replica
+    # Check GKE cluster health
+    gcloud container clusters list --format="table(name,location,status)"
+    # Check Cloud SQL instance health
+    gcloud sql instances list --format="table(name,region,state)"
     ```
-2.  **Update the app config** in `us-east1` to point writes to the newly promoted instance.
-3.  **Verify** write operations succeed: `curl -X POST https://todo.smig.dev/todos -d '{"task":"failover-test"}'`
-4.  **After primary region recovers**: Re-establish replication and revert the promotion.
+
+2.  **Promote the Cloud SQL replica** in `us-east1` to a standalone primary:
+    ```bash
+    gcloud sql instances promote-replica todo-app-db-instance-replica
+    ```
+    Wait for state to become `RUNNABLE` (~2–5 minutes).
+
+3.  **Update the Secret Manager secret** so the `us-east1` app writes to the promoted instance:
+    ```bash
+    # The promoted replica keeps its connection name; the Cloud SQL Proxy sidecar
+    # in us-east1 already connects to it on port 5433. Update the secret so
+    # db_host points to the replica proxy port.
+    gcloud secrets versions add todo-app-secret --data-file=- <<'EOF'
+    {
+      "db_user": "todo-app-sa@smcghee-todo-p15n-38a6.iam",
+      "db_name": "todoapp_db",
+      "db_host": "127.0.0.1",
+      "db_port": "5433",
+      "db_read_host": "127.0.0.1",
+      "db_read_port": "5433"
+    }
+    EOF
+    ```
+
+4.  **Restart the app pods** in `us-east1` to pick up the new secret:
+    ```bash
+    kubectl rollout restart rollout/todo-app-go -n todo-app \
+      --context=gke_smcghee-todo-p15n-38a6_us-east1_todo-app-cluster-secondary
+    ```
+
+5.  **Verify** write operations succeed:
+    ```bash
+    curl -X POST https://todo.smig.dev/todos \
+      -H "Content-Type: application/json" \
+      -d '{"task":"failover-test"}'
+    # Check detailed health
+    curl -H "Accept: application/json" https://todo.smig.dev/healthz
+    ```
+
+6.  **Monitor** the promoted instance and application metrics:
+    ```bash
+    # Check DB routing metrics
+    curl -s https://todo.smig.dev/metrics | grep db_reads_total
+    curl -s https://todo.smig.dev/metrics | grep db_writes_total
+    ```
+
+**Recovery after primary region comes back** (~30 minutes):
+
+1.  **Do NOT immediately revert** — ensure primary region is stable for ≥15 minutes.
+2.  **Create a new replica** from the promoted instance:
+    ```bash
+    gcloud sql instances create todo-app-db-instance-new \
+      --master-instance-name=todo-app-db-instance-replica \
+      --region=us-central1 --tier=db-custom-1-3840 \
+      --database-version=POSTGRES_14 \
+      --database-flags=cloudsql.iam_authentication=on
+    ```
+3.  **Wait for replication** to catch up (check replica lag in Cloud Console).
+4.  **Restore original secret** and restart pods in both regions.
+5.  **Document the incident** — update the post-incident report with timeline and learnings.
 
 ### Database Restore
 
