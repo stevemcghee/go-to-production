@@ -110,17 +110,10 @@ jobs:
       - name: Run Gosec Security Scanner
         run: |
           go install github.com/securego/gosec/v2/cmd/gosec@latest
-          gosec ./...
+          gosec -exclude-generated -tests=false ./...
 
-      - name: Run Trivy vulnerability scanner (fs mode)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
-          trivyignores: '.trivyignore'
+      - name: Install and run Trivy vulnerability scanner
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          trivy fs --exit-code 1 --ignore-unfixed --vuln-type os,library --severity CRITICAL,HIGH --ignorefile .trivyignore --format table .
 
