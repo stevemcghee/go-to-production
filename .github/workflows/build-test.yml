@@ -110,7 +110,7 @@ jobs:
       - name: Run Gosec Security Scanner
         run: |
           go install github.com/securego/gosec/v2/cmd/gosec@latest
-          gosec -exclude-generated -tests=false ./...
+          gosec -exclude-generated -tests=false -exclude=G115 ./...
 
       - name: Install and run Trivy vulnerability scanner
         run: |

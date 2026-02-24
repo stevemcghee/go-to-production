@@ -53,9 +53,9 @@ func main() {
 		defer shutdown()
 	}
 
-	secretName := fmt.Sprintf("projects/%s/secrets/todo-app-secret/versions/latest", projectID)
+	secretName := fmt.Sprintf("projects/%s/secrets/todo-app-secret/versions/latest", projectID) // #nosec G101 -- Secret Manager resource path, not a credential
 
-	secretValue, err := app.AccessSecretVersion(secretName)
+	secretValue, err := app.AccessSecretVersion(secretName) // #nosec G101 -- runtime value from Secret Manager API
 	if err != nil {
 		slog.Error("Failed to fetch secret from Secret Manager", "error", err)
 		os.Exit(1)
@@ -104,11 +104,12 @@ func main() {
 	)
 
 	server := &http.Server{
-		Addr:         ":" + port,
-		Handler:      handler,
-		ReadTimeout:  60 * time.Second,
-		WriteTimeout: 60 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		Addr:              ":" + port,
+		Handler:           handler,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       60 * time.Second,
+		WriteTimeout:      60 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 
 	if err := server.ListenAndServe(); err != nil {
