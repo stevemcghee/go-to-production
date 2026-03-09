@@ -168,7 +168,18 @@ Supply chain security features add minimal cost:
 
 Potential enhancements:
 
-*   **SBOM Generation**: Generate Software Bill of Materials (SBOM) for each image
+*   **SBOM Generation**: Generate Software Bill of Materials (SBOM) for each image using `syft` or `cyclonedx-gomod`, and attach to the container image as an attestation
 *   **Vulnerability Blocking**: Configure Binary Authorization to also block images with CRITICAL vulnerabilities
 *   **Private Sigstore**: Deploy a private Sigstore instance for air-gapped environments
 *   **Attestation Policies**: Add custom attestations (e.g., "passed security review", "approved for production")
+
+### Dependency Integrity Hardening
+
+These items address gaps where a buggy or compromised dependency could bypass existing controls:
+
+*   **Pin CI Actions to SHA**: Replace mutable refs like `securego/gosec@master` and `aquasecurity/trivy-action@master` with full commit SHAs (e.g., `securego/gosec@abcdef1234567890...`). Mutable tags/branches allow a compromised upstream to inject code into CI without any visible change in this repo. Add `github-actions` to Dependabot config to auto-update these pins.
+*   **Pin Docker Base Images by Digest**: Replace `golang:1.25-alpine` and `alpine:latest` with digest-pinned references (e.g., `golang:1.25-alpine@sha256:...`). Mutable tags can be overwritten at the registry. Dependabot already watches Docker deps daily and will propose digest updates.
+*   **Add `go mod verify` to CI**: Validates that dependencies in the local cache match `go.sum` checksums. Catches tampered module caches or proxies serving altered content. Add as a step before `go build`.
+*   **Set `GOFLAGS=-mod=readonly`**: Prevents `go build` from silently modifying `go.mod`/`go.sum` during CI builds or Docker image creation. Ensures the build uses exactly the declared dependency set.
+*   **Add `govulncheck` to CI**: Unlike Trivy (which scans generically), `govulncheck` is Go-aware — it checks whether the vulnerable function is actually reachable from the application's call graph, reducing false positives and catching false negatives.
+*   **Wrap Observability in Recovery Blocks**: A panic in `otelhttp.NewHandler()` or `promhttp.Handler()` currently crashes the entire application. Wrap observability initialization and middleware in `recover()` blocks so core todo functionality survives a buggy OpenTelemetry or Prometheus release.

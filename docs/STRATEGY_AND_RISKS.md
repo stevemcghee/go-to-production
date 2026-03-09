@@ -22,10 +22,10 @@ This document details the risk analysis, mitigation strategies, and future roadm
 | Risk Category | Specific Risk | Prob (1-3) | Imp (1-4) | Score | Status | Existing Mitigation | Proposed Mitigation |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Attack** | DDoS / Web Attacks | Med (2) | High (3) | **6** | ✅ | Cloud Armor | **Strict WAF Rules + Rate Limiting** |
-| **Attack** | Dependency Vulnerabilities | Med (2) | High (3) | **6** | ✅ | Dependabot + Artifact Registry Scanning | **N/A (Already Mitigated)** |
+| **Attack** | Dependency Vulnerabilities | Med (2) | High (3) | **6** | ⚠️ | Dependabot + Artifact Registry Scanning + Trivy | **govulncheck + SBOM Generation + go mod verify** |
 | **Attack** | Secrets Leakage (Git) | Med (2) | High (3) | **6** | ✅ | Pre-commit hooks (gitleaks) | **N/A (Already Mitigated)** |
 | **Attack** | Insider Threat | Low (1) | Catastrophic (4) | **4** | ❌ | *None* | **Just-in-Time Access (JIT) + Audit Logs** |
-| **Attack** | Supply Chain Attack | Low (1) | High (3) | **3** | ✅ | Cosign Signing + Binary Authorization | **N/A (Already Mitigated)** |
+| **Attack** | Supply Chain Attack | Low (1) | High (3) | **3** | ⚠️ | Cosign Signing + Binary Authorization | **Pin CI actions to SHA + Pin Docker base images by digest + SBOM** |
 | **Attack** | SQL Injection | Low (1) | High (3) | **3** | ✅ | Parameterized Queries | **N/A (Already Mitigated)** |
 
 #### Data Integrity & Availability Risks
@@ -58,6 +58,31 @@ This document details the risk analysis, mitigation strategies, and future roadm
 
 *   **Container Scanning**: Enable Artifact Registry Vulnerability Scanning. Block deployments with Critical vulnerabilities.
 *   **WAF Tuning**: Explicitly define Cloud Armor rules in Terraform (if not already) to block common OWASP attacks.
+
+#### 4. Dependency & Supply Chain Hardening
+**Goal**: Treat every dependency as a potential source of failure or compromise.
+
+**Current Gaps**:
+*   CI actions (`securego/gosec@master`, `aquasecurity/trivy-action@master`) use mutable refs — a compromised upstream injects code into CI.
+*   Docker base images (`golang:1.25-alpine`, `alpine:latest`) are mutable tags — a registry compromise replaces the base.
+*   No `go mod verify` in CI — tampered module cache goes undetected.
+*   No Go-aware vulnerability detection (`govulncheck`) — Trivy scans generically but doesn't know if vulnerable functions are actually called.
+*   No SBOM — incident response is slow when you can't quickly answer "are we affected by CVE-X?"
+*   Observability deps (OpenTelemetry, Prometheus) can crash the app if they panic — no isolation from core functionality.
+
+**Proposed Mitigations (by priority)**:
+
+| Priority | Action | Effort | Impact |
+| :--- | :--- | :--- | :--- |
+| **P0** | Pin all CI GitHub Actions to full commit SHAs (not tags/branches) | 15 min | Blocks supply chain attack on CI |
+| **P0** | Pin Docker base images by digest (`golang:1.25-alpine@sha256:...`) | 10 min | Blocks base image tampering |
+| **P1** | Add `go mod verify` step to CI pipeline | 10 min | Validates module integrity at build time |
+| **P1** | Set `GOFLAGS=-mod=readonly` in CI and Dockerfile | 5 min | Prevents undeclared dependency changes during build |
+| **P1** | Add `govulncheck` to CI pipeline | 15 min | Go-aware CVE detection (checks if vulnerable code paths are reachable) |
+| **P2** | Generate SBOM with `syft` or `cyclonedx-gomod` and attach to container image | 30 min | Enables rapid incident response for new CVEs |
+| **P2** | Add Dependabot config for `github-actions` ecosystem | 5 min | Auto-updates CI action versions |
+| **P3** | Wrap observability initialization (`otelhttp`, `promhttp`) in recovery blocks | 30 min | Core app survives a buggy OpenTelemetry or Prometheus release |
+| **P3** | Add integration test that verifies app starts and serves `/healthz` without tracing/metrics deps | 30 min | Validates graceful degradation |
 
 ### Completed Milestones
 
