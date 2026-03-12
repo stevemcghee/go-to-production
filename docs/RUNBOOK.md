@@ -553,13 +553,9 @@ git push origin main
 
 ---
 
-## Planned Operational Procedures (Milestones 14–16)
+## Operational Procedures (Milestone 14)
 
-The following sections describe procedures that will be implemented in upcoming milestones.
-As each milestone is completed, move the relevant section above this header and remove the
-"planned" annotation.
-
-### Quota Exhaustion Alert Response (Milestone 14)
+### Quota Exhaustion Alert Response
 
 **Trigger**: Cloud Monitoring alert "GCP Quota Usage > 80%".
 
@@ -581,7 +577,7 @@ As each milestone is completed, move the relevant section above this header and 
 4. **Investigate**: If unexpected, check for runaway autoscalers, leaked resources, or
    misconfigured Terraform that is over-provisioning.
 
-### Billing Spike Response (Milestone 14)
+### Billing Spike Response
 
 **Trigger**: Cloud Billing budget alert at 50% / 80% / 100% of monthly budget.
 
@@ -601,7 +597,7 @@ As each milestone is completed, move the relevant section above this header and 
 5. **Escalate** if 100% threshold is breached — consider scaling down non-critical
    environments.
 
-### Backup Restore Drill (Milestone 14)
+### Backup Restore Drill
 
 **Schedule**: Monthly (1st of each month, 03:00 UTC, automated via CronJob).
 
@@ -622,7 +618,7 @@ kubectl create job --from=cronjob/backup-restore-drill drill-manual-$(date +%s) 
 3. Attempt manual restore (see "Database Restore" section above).
 4. If repeated failures, investigate Cloud SQL service health and open a support case.
 
-### Audit & Access Review (Milestone 14)
+### Audit & Access Review
 
 **Schedule**: Quarterly.
 
@@ -640,6 +636,10 @@ kubectl create job --from=cronjob/backup-restore-drill drill-manual-$(date +%s) 
    ```
 4. **Rotate service account keys** if any exist (prefer Workload Identity instead).
 5. **Document findings** and remediate any issues.
+
+---
+
+## Planned Operational Procedures (Milestones 15–16)
 
 ### Chaos Experiment Procedure (Milestone 15)
 

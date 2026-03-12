@@ -10,6 +10,7 @@ resources:
   - db-init-job.yaml
   - verify-job.yaml
   - load-generator.yaml
+  - backup-drill-cronjob.yaml
   - pod-monitoring.yaml
   - policies/template-required-labels.yaml
   - policies/constraint-ns-owner.yaml

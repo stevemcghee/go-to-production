@@ -311,6 +311,60 @@ func TestDBConfigJSONMarshaling(t *testing.T) {
 	}
 }
 
+// TestSanitizeLog tests PII redaction in log output
+func TestSanitizeLog(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "no PII",
+			input:    "Buy groceries",
+			expected: "Buy groceries",
+		},
+		{
+			name:     "email address",
+			input:    "Contact john.doe@example.com about task",
+			expected: "Contact [REDACTED-EMAIL] about task",
+		},
+		{
+			name:     "SSN pattern",
+			input:    "SSN is 123-45-6789",
+			expected: "SSN is [REDACTED-SSN]",
+		},
+		{
+			name:     "credit card number",
+			input:    "Card 4111111111111111 on file",
+			expected: "Card [REDACTED-CC] on file",
+		},
+		{
+			name:     "credit card with spaces",
+			input:    "Card 4111 1111 1111 1111 on file",
+			expected: "Card [REDACTED-CC] on file",
+		},
+		{
+			name:     "multiple PII types",
+			input:    "User user@test.com SSN 123-45-6789",
+			expected: "User [REDACTED-EMAIL] SSN [REDACTED-SSN]",
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := app.SanitizeLog(tt.input)
+			if result != tt.expected {
+				t.Errorf("SanitizeLog(%q) = %q, want %q", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
 // TestCircuitBreakerInitialization tests that the circuit breaker is properly initialized
 func TestCircuitBreakerInitialization(t *testing.T) {
 	if app.CB == nil {

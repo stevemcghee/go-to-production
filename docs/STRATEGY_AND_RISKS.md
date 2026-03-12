@@ -12,10 +12,10 @@ This document details the risk analysis, mitigation strategies, and future roadm
 | **Self-Imposed** | Bad Deployment | High (3) | High (3) | **9** | ✅ | Argo Rollouts + Automated Rollback | **N/A (Already Mitigated)** |
 | **Self-Imposed** | Manual Config Drift | High (3) | Med (2) | **6** | ✅ | ArgoCD + OPA Gatekeeper | **N/A (Already Mitigated)** |
 | **Infra Failure** | Single Zone Failure | Med (2) | High (3) | **6** | ✅ | Regional GKE, HA Cloud SQL | **N/A (Already Mitigated)** |
-| **Infra Failure** | Quota Exhaustion | Med (2) | High (3) | **6** | ❌ → Milestone 14 | *None* | **Quota Monitoring & Alerts** |
+| **Infra Failure** | Quota Exhaustion | Med (2) | High (3) | **6** | ✅ Milestone 14 | Quota usage alert (>80%) | **N/A (Mitigated)** |
 | **Self-Imposed** | Terraform State Conflict | Med (2) | Med (2) | **4** | ✅ | GCS Backend | **State Locking / Atlantis** |
 | **Infra Failure** | Region Failure | Low (1) | Catastrophic (4) | **4** | 🔶 Milestone 13 (partial) | Multi-region infra deployed | **Verify failover + DNS** |
-| **Infra Failure** | Billing Spike | Low (1) | High (3) | **3** | ❌ → Milestone 14 | *None* | **Budget Alerts + Cap Enforcement** |
+| **Infra Failure** | Billing Spike | Low (1) | High (3) | **3** | ✅ Milestone 14 | Budget alerts at 50%/80%/100% | **N/A (Mitigated)** |
 | **Infra Failure** | Cloud Provider Failure | V.Low (0.5) | Catastrophic (4) | **2** | ❌ → Stretch (M17) | *None* | **Multi-Cloud Strategy** |
 
 #### Security & Attack Risks
@@ -24,17 +24,17 @@ This document details the risk analysis, mitigation strategies, and future roadm
 | **Attack** | DDoS / Web Attacks | Med (2) | High (3) | **6** | ✅ | Cloud Armor | **Strict WAF Rules + Rate Limiting** |
 | **Attack** | Dependency Vulnerabilities | Med (2) | High (3) | **6** | ✅ | Dependabot + Artifact Registry Scanning | **N/A (Already Mitigated)** |
 | **Attack** | Secrets Leakage (Git) | Med (2) | High (3) | **6** | ✅ | Pre-commit hooks (gitleaks) | **N/A (Already Mitigated)** |
-| **Attack** | Insider Threat | Low (1) | Catastrophic (4) | **4** | ❌ → Milestone 14 | *None* | **Just-in-Time Access (JIT) + Audit Logs** |
+| **Attack** | Insider Threat | Low (1) | Catastrophic (4) | **4** | ✅ Milestone 14 | Audit log sink + IAM change alerts | **N/A (Mitigated)** |
 | **Attack** | Supply Chain Attack | Low (1) | High (3) | **3** | ✅ | Cosign Signing + Binary Authorization | **N/A (Already Mitigated)** |
 | **Attack** | SQL Injection | Low (1) | High (3) | **3** | ✅ | Parameterized Queries | **N/A (Already Mitigated)** |
 
 #### Data Integrity & Availability Risks
 | Risk Category | Specific Risk | Prob (1-3) | Imp (1-4) | Score | Status | Existing Mitigation | Proposed Mitigation |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Data** | Sensitive Data Leakage | Med (2) | High (3) | **6** | ❌ → Milestone 14 | *None* | **Structured Logging + Redaction** |
+| **Data** | Sensitive Data Leakage | Med (2) | High (3) | **6** | ✅ Milestone 14 | PII redaction in structured logs | **N/A (Mitigated)** |
 | **Data** | Accidental DB Deletion | Low (1) | Catastrophic (4) | **4** | ✅ | PITR (Point-in-Time Recovery) | **Object Locks / Delete Protection** |
-| **Data** | Backup Restore Failure | Low (1) | Catastrophic (4) | **4** | ❌ → Milestone 14 | *None* | **Automated Restore Drills** |
-| **Data** | Ransomware / Corruption | Low (1) | High (3) | **3** | ❌ → Milestone 14 | *None* | **GCS Bucket Lock (Retention Policy)** |
+| **Data** | Backup Restore Failure | Low (1) | Catastrophic (4) | **4** | ✅ Milestone 14 | Monthly automated restore drill | **N/A (Mitigated)** |
+| **Data** | Ransomware / Corruption | Low (1) | High (3) | **3** | ✅ Milestone 14 | GCS 30-day retention + versioning | **N/A (Mitigated)** |
 
 ### Detailed Mitigation Plan
 
@@ -108,15 +108,15 @@ This document details the risk analysis, mitigation strategies, and future roadm
 
 ### Planned Future Milestones
 
-#### 14. Operational Resilience (`milestone-14-operational-resilience`)
+#### ✅ 14. Operational Resilience (`milestone-14-operational-resilience`)
 **Goal**: Close the six highest-priority open risks in the risk matrix.
-*   **Scope**:
-    *   Structured logging + PII redaction (Sensitive Data Leakage — score 6)
-    *   Quota monitoring & alerts (Quota Exhaustion — score 6)
-    *   Budget alerts + spending cap (Billing Spike — score 3)
-    *   Automated backup restore drill (Backup Restore Failure — score 4)
-    *   GCS bucket lock & retention (Ransomware / Corruption — score 3)
-    *   Audit log sink + IAM hardening (Insider Threat — score 4)
+*   **Completed**:
+    *   ✅ Structured logging + PII redaction (Sensitive Data Leakage — score 6)
+    *   ✅ Quota monitoring & alerts (Quota Exhaustion — score 6)
+    *   ✅ Budget alerts + spending cap (Billing Spike — score 3)
+    *   ✅ Automated backup restore drill (Backup Restore Failure — score 4)
+    *   ✅ GCS bucket lock & retention (Ransomware / Corruption — score 3)
+    *   ✅ Audit log sink + IAM hardening (Insider Threat — score 4)
 *   See: [docs/14_OPERATIONAL_RESILIENCE.md](14_OPERATIONAL_RESILIENCE.md)
 
 #### 15. Advanced Observability (`milestone-15-advanced-observability`)

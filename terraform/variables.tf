@@ -53,6 +53,12 @@ variable "db_password" {
   sensitive   = true
 }
 
+variable "billing_account_id" {
+  description = "The GCP billing account ID for budget alerts"
+  type        = string
+  sensitive   = true
+}
+
 variable "alert_email" {
   description = "Email address for monitoring alerts"
   type        = string

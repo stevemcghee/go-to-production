@@ -6,6 +6,25 @@ resource "google_monitoring_notification_channel" "email" {
   }
 }
 
+resource "google_monitoring_alert_policy" "quota_usage" {
+  display_name = "GCP Quota Usage > 80%"
+  combiner     = "OR"
+  conditions {
+    display_name = "Quota usage high"
+    condition_threshold {
+      filter          = "metric.type=\"serviceruntime.googleapis.com/quota/allocation/usage\" AND resource.type=\"consumer_quota\""
+      comparison      = "COMPARISON_GT"
+      threshold_value = 0.8
+      duration        = "0s"
+      aggregations {
+        alignment_period   = "300s"
+        per_series_aligner = "ALIGN_MEAN"
+      }
+    }
+  }
+  notification_channels = [google_monitoring_notification_channel.email.name]
+}
+
 resource "google_monitoring_alert_policy" "high_error_rate" {
   display_name = "High Error Rate (HTTP 5xx)"
   combiner     = "OR"

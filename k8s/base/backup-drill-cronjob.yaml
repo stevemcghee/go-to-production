@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-restore-drill
+  namespace: todo-app
+  labels:
+    app: backup-restore-drill
+spec:
+  schedule: "0 3 1 * *" # 1st of each month at 03:00 UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 1800 # 30 minute timeout
+      template:
+        metadata:
+          labels:
+            app: backup-restore-drill
+        spec:
+          serviceAccountName: todo-app-sa
+          restartPolicy: Never
+          containers:
+            - name: drill
+              image: google/cloud-sdk:alpine
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  apk add --no-cache postgresql-client
+                  /scripts/backup-restore-drill.sh
+              env:
+                - name: GCP_PROJECT
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: DB_INSTANCE
+                  value: "todo-app-db-instance"
+                - name: DB_NAME
+                  value: "todoapp_db"
+                - name: REGION
+                  value: "us-central1"
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              volumeMounts:
+                - name: drill-script
+                  mountPath: /scripts
+          volumes:
+            - name: drill-script
+              configMap:
+                name: backup-drill-script
+                defaultMode: 0755

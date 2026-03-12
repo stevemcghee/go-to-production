@@ -13,6 +13,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -142,6 +143,26 @@ func shouldReadFromPrimary() bool {
 	lastWriteMu.RLock()
 	defer lastWriteMu.RUnlock()
 	return !lastWriteTime.IsZero() && time.Since(lastWriteTime) < ReadAfterWriteWindow
+}
+
+// PII redaction patterns for structured logging.
+// These catch common PII patterns in user-submitted data before it reaches logs.
+var piiPatterns = []struct {
+	re          *regexp.Regexp
+	replacement string
+}{
+	{regexp.MustCompile(`[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}`), "[REDACTED-EMAIL]"},
+	{regexp.MustCompile(`\b\d{3}-\d{2}-\d{4}\b`), "[REDACTED-SSN]"},
+	{regexp.MustCompile(`\b(?:\d[ -]*?){13,16}\b`), "[REDACTED-CC]"},
+}
+
+// SanitizeLog redacts common PII patterns (emails, SSNs, credit card numbers)
+// from a string before it is written to structured logs.
+func SanitizeLog(s string) string {
+	for _, p := range piiPatterns {
+		s = p.re.ReplaceAllString(s, p.replacement)
+	}
+	return s
 }
 
 // Circuit Breaker provides fault tolerance by preventing requests to a failing service.
@@ -572,14 +593,14 @@ func AddTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slog.Info("Decoded todo", "task", t.Task)
+	slog.Info("Decoded todo", "task", SanitizeLog(t.Task))
 
 	err := ExecuteWithRobustness(func() error {
 		return DB.QueryRow("INSERT INTO todos (task) VALUES ($1) RETURNING id, completed", t.Task).Scan(&t.ID, &t.Completed)
 	})
 
 	if err != nil {
-		slog.Error("Failed to insert todo", "error", err, "task", t.Task)
+		slog.Error("Failed to insert todo", "error", err, "task", SanitizeLog(t.Task))
 		if err == gobreaker.ErrOpenState {
 			http.Error(w, "Service Unavailable (Circuit Breaker Open)", http.StatusServiceUnavailable)
 		} else {
@@ -590,7 +611,7 @@ func AddTodo(w http.ResponseWriter, r *http.Request) {
 
 	recordWrite()
 	DBWritesTotal.Inc()
-	slog.Info("Successfully added todo", "id", t.ID, "task", t.Task)
+	slog.Info("Successfully added todo", "id", t.ID, "task", SanitizeLog(t.Task))
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(t); err != nil {
