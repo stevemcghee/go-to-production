@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-PROJECT_ID="smcghee-todo-p15n-38a6"
+PROJECT_ID="${PROJECT_ID:-"YOUR_PROJECT_ID"}"
 REGION="us-central1"
 
 echo "Importing resources for project: $PROJECT_ID"

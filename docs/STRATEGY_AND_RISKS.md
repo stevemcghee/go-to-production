@@ -95,12 +95,12 @@ This document details the risk analysis, mitigation strategies, and future roadm
 *   **Completed**:
     *   ✅ GKE cluster replicated to `us-east1`
     *   ✅ Cloud SQL Cross-Region Read Replica provisioned
-    *   ✅ Multi-Cluster Ingress with static IP (`34.160.71.244`)
+    *   ✅ Multi-Cluster Ingress with static IP (`MCI_IP`)
     *   ✅ ArgoCD managing both clusters
 *   **Remaining**:
     *   ❌ Verify DB replication lag and connectivity
     *   ❌ Application config for region-aware DB routing
-    *   ❌ DNS: point `todo.smig.dev` → `34.160.71.244`
+    *   ❌ DNS: point `DOMAIN_NAME` → `MCI_IP`
     *   ❌ Verify traffic routes to nearest region
     *   ❌ Failover drill (drain us-central1, validate us-east1)
     *   ❌ Update RUNBOOK.md to mark region failure mitigated

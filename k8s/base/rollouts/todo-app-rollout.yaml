@@ -46,8 +46,8 @@ spec:
         args:
           - "--structured-logs"
           - "--auto-iam-authn"
-          - "smcghee-todo-p15n-38a6:us-central1:todo-app-db-instance?port=5432"
-          - "smcghee-todo-p15n-38a6:us-east1:todo-app-db-instance-replica?port=5433"
+          - "GCP_PROJECT_ID:us-central1:todo-app-db-instance?port=5432"
+          - "GCP_PROJECT_ID:us-east1:todo-app-db-instance-replica?port=5433"
         securityContext:
           runAsNonRoot: true
         resources:

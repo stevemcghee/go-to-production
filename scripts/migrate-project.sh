@@ -17,14 +17,14 @@ set -euo pipefail
 # ─────────────────────────────────────────────────────────────────────────────
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
-OLD_PROJECT="smcghee-todo-p15n-38a6"
-OLD_STATE_BUCKET="tf-state-smcghee-todo-p15n-38a6"
+OLD_PROJECT="GCP_PROJECT_ID"
+OLD_STATE_BUCKET="tf-state-GCP_PROJECT_ID"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CHECKPOINT_FILE="${REPO_ROOT}/.migration-checkpoint"
 LOG_FILE="${REPO_ROOT}/.migration-$(date +%Y%m%d-%H%M%S).log"
-DOMAIN="todo.smig.dev"
-DNS_ZONE="smig-dev-zone"
-OLD_MCI_IP="34.160.71.244"
+DOMAIN="DOMAIN_NAME"
+DNS_ZONE="DNS_ZONE"
+OLD_MCI_IP="MCI_IP"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Colors & glyphs

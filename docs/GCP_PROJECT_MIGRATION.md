@@ -3,7 +3,7 @@
 ## Overview
 
 This document describes a zero-downtime migration of the entire go-to-production
-stack from the current GCP project (`smcghee-todo-p15n-38a6`) to a new GCP
+stack from the current GCP project (`${OLD_PROJECT}`) to a new GCP
 project. The approach uses a **parallel-deploy + DNS-cutover** strategy: the
 complete infrastructure is stood up in the new project while the old project
 continues serving traffic, then DNS is atomically switched once the new stack
@@ -26,10 +26,10 @@ Before starting, ensure:
 - [ ] `gcloud` CLI authenticated with Owner/Editor on both old and new projects
 - [ ] Terraform >= 1.5 installed locally
 - [ ] `kubectl`, `helm`, `kustomize`, `cosign` installed
-- [ ] DNS control over `todo.smig.dev` (or whatever domain is in use)
+- [ ] DNS control over `${DOMAIN_NAME}` (or whatever domain is in use)
 - [ ] GitHub repository admin access (for secrets/OIDC updates)
 - [ ] Current database backup verified (run a restore test first)
-- [ ] Record the new project ID — referred to as `NEW_PROJECT_ID` below
+- [ ] Record the new project ID — referred to as `${NEW_PROJECT}` below
 
 ---
 
@@ -58,18 +58,31 @@ Everything that must be recreated in the new project:
 
 ## Phase 1: Prepare the New Project (Day 1)
 
+### 1.0 Set Environment Variables
+
+First, set these environment variables in your terminal to make the following commands copy-pasteable:
+
+```bash
+export OLD_PROJECT="your-old-project-id"
+export NEW_PROJECT="your-new-project-id"
+export BILLING_ACCOUNT_ID="your-billing-account-id"
+export DOMAIN_NAME="todo.smig.dev"
+export DNS_ZONE="smig-dev-zone"
+export OLD_MCI_IP="34.160.71.244"
+```
+
 ### 1.1 Create the GCP project and enable billing
 
 ```bash
-gcloud projects create NEW_PROJECT_ID --name="Todo App Production"
-gcloud billing projects link NEW_PROJECT_ID --billing-account=BILLING_ACCOUNT_ID
+gcloud projects create ${NEW_PROJECT} --name="Todo App Production"
+gcloud billing projects link ${NEW_PROJECT} --billing-account=${BILLING_ACCOUNT_ID}
 ```
 
 ### 1.2 Create the Terraform state bucket
 
 ```bash
-gsutil mb -p NEW_PROJECT_ID -l us-central1 gs://tf-state-NEW_PROJECT_ID
-gsutil versioning set on gs://tf-state-NEW_PROJECT_ID
+gsutil mb -p ${NEW_PROJECT} -l us-central1 gs://tf-state-${NEW_PROJECT}
+gsutil versioning set on gs://tf-state-${NEW_PROJECT}
 ```
 
 ### 1.3 Create a migration branch
@@ -85,7 +98,7 @@ Edit `terraform/main.tf`:
 ```hcl
 terraform {
   backend "gcs" {
-    bucket = "tf-state-NEW_PROJECT_ID"    # was: tf-state-smcghee-todo-p15n-38a6
+    bucket = "tf-state-${NEW_PROJECT}"    # was: tf-state-${OLD_PROJECT}
     prefix = "terraform/state"
   }
 }
@@ -94,7 +107,7 @@ terraform {
 ### 1.5 Create new `terraform.tfvars`
 
 ```hcl
-project_id  = "NEW_PROJECT_ID"
+project_id  = "${NEW_PROJECT}"
 db_password = "GENERATE_A_NEW_SECURE_PASSWORD"
 alert_email = "your-alert-email@example.com"
 ```
@@ -124,10 +137,10 @@ This provisions:
 
 **Expected duration:** 20–40 minutes (Cloud SQL and GKE are the bottlenecks).
 
-Record the new global IP from Terraform output:
+Record the new global IP from Terraform output and export it:
 ```bash
-terraform output mci_static_ip
-# e.g., 34.xxx.yyy.zzz
+export NEW_MCI_IP=$(terraform output -raw mci_static_ip)
+# Verify it: echo $NEW_MCI_IP
 ```
 
 ---
@@ -139,28 +152,28 @@ terraform output mci_static_ip
 ```bash
 # Create an export in the old project
 gcloud sql export sql todo-app-db-instance \
-  gs://tf-state-smcghee-todo-p15n-38a6/db-export/migration.sql \
+  gs://tf-state-${OLD_PROJECT}/db-export/migration.sql \
   --database=todoapp_db \
-  --project=smcghee-todo-p15n-38a6
+  --project=${OLD_PROJECT}
 ```
 
 ### 2.2 Import into new project
 
 ```bash
 # Copy the export to the new project's bucket (or use cross-project access)
-gsutil cp gs://tf-state-smcghee-todo-p15n-38a6/db-export/migration.sql \
-         gs://tf-state-NEW_PROJECT_ID/db-import/migration.sql
+gsutil cp gs://tf-state-${OLD_PROJECT}/db-export/migration.sql \
+         gs://tf-state-${NEW_PROJECT}/db-import/migration.sql
 
 # Grant the new Cloud SQL instance access to the bucket
 SA=$(gcloud sql instances describe todo-app-db-instance \
-  --project=NEW_PROJECT_ID --format='value(serviceAccountEmailAddress)')
-gsutil iam ch serviceAccount:${SA}:objectViewer gs://tf-state-NEW_PROJECT_ID
+  --project=${NEW_PROJECT} --format='value(serviceAccountEmailAddress)')
+gsutil iam ch serviceAccount:${SA}:objectViewer gs://tf-state-${NEW_PROJECT}
 
 # Import
 gcloud sql import sql todo-app-db-instance \
-  gs://tf-state-NEW_PROJECT_ID/db-import/migration.sql \
+  gs://tf-state-${NEW_PROJECT}/db-import/migration.sql \
   --database=todoapp_db \
-  --project=NEW_PROJECT_ID
+  --project=${NEW_PROJECT}
 ```
 
 ### 2.3 Create the IAM database user
@@ -170,7 +183,7 @@ Run the IAM user creation job against the new cluster:
 ```bash
 # Get credentials for the new primary cluster
 gcloud container clusters get-credentials todo-app-cluster \
-  --region=us-central1 --project=NEW_PROJECT_ID
+  --region=us-central1 --project=${NEW_PROJECT}
 
 # Apply the IAM user creation job
 kubectl apply -f k8s/base/create-iam-user-job.yaml
@@ -195,8 +208,8 @@ table contents.
 
 ### 3.1 Update all hardcoded project references
 
-The project ID `smcghee-todo-p15n-38a6` appears in these files. Every
-occurrence must be updated to `NEW_PROJECT_ID`:
+The project ID `${OLD_PROJECT}` appears in these files. Every
+occurrence must be updated to `${NEW_PROJECT}`:
 
 | File | What to Change |
 |------|----------------|
@@ -215,14 +228,14 @@ occurrence must be updated to `NEW_PROJECT_ID`:
 A sed one-liner for the bulk of it:
 
 ```bash
-grep -rl 'smcghee-todo-p15n-38a6' --include='*.go' --include='*.yaml' --include='*.sh' . \
-  | xargs sed -i 's/smcghee-todo-p15n-38a6/NEW_PROJECT_ID/g'
+grep -rl "${OLD_PROJECT}" --include='*.go' --include='*.yaml' --include='*.sh' . \
+  | xargs sed -i "s/${OLD_PROJECT}/${NEW_PROJECT}/g"
 ```
 
 **Verify no references remain:**
 
 ```bash
-grep -r 'smcghee-todo-p15n-38a6' . --include='*.go' --include='*.yaml' --include='*.tf' --include='*.sh'
+grep -r "${OLD_PROJECT}" . --include='*.go' --include='*.yaml' --include='*.tf' --include='*.sh'
 # Should return zero results (except possibly docs, which are fine)
 ```
 
@@ -230,16 +243,16 @@ grep -r 'smcghee-todo-p15n-38a6' . --include='*.go' --include='*.yaml' --include
 
 ```bash
 # Authenticate to the new Artifact Registry
-gcloud auth configure-docker us-central1-docker.pkg.dev --project=NEW_PROJECT_ID
+gcloud auth configure-docker us-central1-docker.pkg.dev --project=${NEW_PROJECT}
 
 # Build
-docker build -t us-central1-docker.pkg.dev/NEW_PROJECT_ID/todo-app-go/todo-app-go:migration .
+docker build -t us-central1-docker.pkg.dev/${NEW_PROJECT}/todo-app-go/todo-app-go:migration .
 
 # Push
-docker push us-central1-docker.pkg.dev/NEW_PROJECT_ID/todo-app-go/todo-app-go:migration
+docker push us-central1-docker.pkg.dev/${NEW_PROJECT}/todo-app-go/todo-app-go:migration
 
 # Sign with Cosign (for Binary Authorization)
-cosign sign --yes us-central1-docker.pkg.dev/NEW_PROJECT_ID/todo-app-go/todo-app-go:migration
+cosign sign --yes us-central1-docker.pkg.dev/${NEW_PROJECT}/todo-app-go/todo-app-go:migration
 ```
 
 ### 3.3 Update Kustomize image tag
@@ -248,7 +261,7 @@ Edit `k8s/base/kustomization.yaml` to reference the new image digest:
 
 ```yaml
 images:
-  - name: us-central1-docker.pkg.dev/NEW_PROJECT_ID/todo-app-go/todo-app-go
+  - name: us-central1-docker.pkg.dev/${NEW_PROJECT}/todo-app-go/todo-app-go
     digest: sha256:<NEW_DIGEST>
 ```
 
@@ -306,24 +319,26 @@ In the GitHub repository settings, update:
 
 | Secret/Variable | Old Value | New Value |
 |-----------------|-----------|-----------|
-| `GCP_PROJECT` (var) | `smcghee-todo-p15n-38a6` | `NEW_PROJECT_ID` |
+| `GCP_PROJECT` (var) | `${OLD_PROJECT}` | `${NEW_PROJECT}` |
 | `GCP_SA_KEY` or OIDC | Old project SA | New `github-actions-deployer` SA |
 | `WIF_PROVIDER` | Old Workload Identity pool | New pool (if using OIDC) |
 | `WIF_SERVICE_ACCOUNT` | Old SA email | New SA email |
 
 ### 4.2 Update GitHub Actions OIDC (if applicable)
 
-If using Workload Identity Federation for keyless auth:
+If using Workload Identity Federation for keyless auth, you will first need the new project's number:
 
 ```bash
+export PROJECT_NUMBER=$(gcloud projects describe ${NEW_PROJECT} --format='value(projectNumber)')
+
 # In the new project, create the WIF pool and provider
 gcloud iam workload-identity-pools create "github" \
-  --project=NEW_PROJECT_ID \
+  --project=${NEW_PROJECT} \
   --location="global" \
   --display-name="GitHub Actions Pool"
 
 gcloud iam workload-identity-pools providers create-oidc "github-provider" \
-  --project=NEW_PROJECT_ID \
+  --project=${NEW_PROJECT} \
   --location="global" \
   --workload-identity-pool="github" \
   --display-name="GitHub Provider" \
@@ -332,10 +347,10 @@ gcloud iam workload-identity-pools providers create-oidc "github-provider" \
 
 # Bind the deployer SA
 gcloud iam service-accounts add-iam-policy-binding \
-  github-actions-deployer@NEW_PROJECT_ID.iam.gserviceaccount.com \
-  --project=NEW_PROJECT_ID \
+  github-actions-deployer@${NEW_PROJECT}.iam.gserviceaccount.com \
+  --project=${NEW_PROJECT} \
   --role="roles/iam.workloadIdentityUser" \
-  --member="principalSet://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github/attribute.repository/stevemcghee/go-to-production"
+  --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/github/attribute.repository/stevemcghee/go-to-production"
 ```
 
 ### 4.3 Test CI pipeline
@@ -360,27 +375,27 @@ and minutes to propagate.
 - [ ] Binary Authorization enforcing signed images
 - [ ] SLO monitoring dashboard showing data
 - [ ] Alert policies firing test alerts correctly
-- [ ] MCI global IP responding: `curl -k https://NEW_MCI_IP/healthz`
+- [ ] MCI global IP responding: `curl -k https://${NEW_MCI_IP}/healthz`
 - [ ] ArgoCD synced and healthy
 
 ### 5.2 Execute DNS cutover
 
-Update the A record for `todo.smig.dev`:
+Update the A record for `${DOMAIN_NAME}`:
 
 ```
-Old: todo.smig.dev → 34.160.71.244  (old project MCI IP)
-New: todo.smig.dev → NEW_MCI_IP     (new project MCI IP)
+Old: ${DOMAIN_NAME} → ${OLD_MCI_IP}  (old project MCI IP)
+New: ${DOMAIN_NAME} → ${NEW_MCI_IP}     (new project MCI IP)
 ```
 
 Set a low TTL (60s) on the record before cutover to speed propagation.
 
 ```bash
 # If using Cloud DNS:
-gcloud dns record-sets update todo.smig.dev \
-  --zone=smig-dev-zone \
+gcloud dns record-sets update ${DOMAIN_NAME} \
+  --zone=${DNS_ZONE} \
   --type=A \
   --ttl=60 \
-  --rrdatas=NEW_MCI_IP
+  --rrdatas=${NEW_MCI_IP}
 
 # If using an external registrar: update through their UI/API
 ```
@@ -389,14 +404,14 @@ gcloud dns record-sets update todo.smig.dev \
 
 ```bash
 # Watch DNS propagation
-watch -n5 dig +short todo.smig.dev
+watch -n5 dig +short ${DOMAIN_NAME}
 
 # Monitor error rate in new project
 # Open the Cloud Monitoring dashboard:
-# https://console.cloud.google.com/monitoring/dashboards?project=NEW_PROJECT_ID
+# https://console.cloud.google.com/monitoring/dashboards?project=${NEW_PROJECT}
 
 # Check SLO burn rate
-gcloud monitoring slos list --project=NEW_PROJECT_ID
+gcloud monitoring slos list --project=${NEW_PROJECT}
 ```
 
 ### 5.4 Keep old project running
@@ -433,9 +448,9 @@ If using Option C above, run the final sync now:
 ```bash
 # Export any rows created after the initial migration export
 gcloud sql export sql todo-app-db-instance \
-  gs://tf-state-smcghee-todo-p15n-38a6/db-export/final-delta.sql \
+  gs://tf-state-${OLD_PROJECT}/db-export/final-delta.sql \
   --database=todoapp_db \
-  --project=smcghee-todo-p15n-38a6
+  --project=${OLD_PROJECT}
 
 # Review and selectively import into new project
 ```
@@ -457,10 +472,10 @@ git push origin main --tags
 # Option 1: Shut down resources but keep project (recommended for 30 days)
 cd terraform
 # Point backend back to old bucket temporarily
-terraform destroy -var="project_id=smcghee-todo-p15n-38a6"
+terraform destroy -var="project_id=${OLD_PROJECT}"
 
 # Option 2: Delete entire project (irreversible after 30-day grace period)
-gcloud projects delete smcghee-todo-p15n-38a6
+gcloud projects delete ${OLD_PROJECT}
 ```
 
 ### 6.5 Update documentation
@@ -480,9 +495,9 @@ If problems are discovered after DNS cutover:
 
 1. Revert DNS to old project's MCI IP:
    ```bash
-   gcloud dns record-sets update todo.smig.dev \
-     --zone=smig-dev-zone --type=A --ttl=60 \
-     --rrdatas=34.160.71.244
+   gcloud dns record-sets update ${DOMAIN_NAME} \
+     --zone=${DNS_ZONE} --type=A --ttl=60 \
+     --rrdatas=${OLD_MCI_IP}
    ```
 2. Old project is still running; traffic resumes there within minutes.
 3. Investigate and fix issues in new project.

@@ -101,7 +101,7 @@ auto-scaler runaway) could cause an unexpected billing spike.
    ```hcl
    resource "google_billing_budget" "monthly_budget" {
      billing_account = var.billing_account_id
-     display_name    = "go-to-production Monthly Budget"
+     display_name    = "Todo App Monthly Budget"
 
      budget_filter {
        projects = ["projects/${var.project_id}"]

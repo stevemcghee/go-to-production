@@ -25,14 +25,14 @@ metadata:
   name: production
 description: Production GKE cluster
 gke:
-  cluster: projects/smcghee-todo-p15n-38a6/locations/us-central1/clusters/todo-app-cluster
+  cluster: projects/GCP_PROJECT_ID/locations/us-central1/clusters/todo-app-cluster
 ---
 apiVersion: deploy.cloud.google.com/v1
 kind: Automation
 metadata:
   name: todo-app-automation
   description: Automate canary advancement
-serviceAccount: github-actions-deployer@smcghee-todo-p15n-38a6.iam.gserviceaccount.com
+serviceAccount: github-actions-deployer@GCP_PROJECT_ID.iam.gserviceaccount.com
 selector:
   targets:
   - id: production

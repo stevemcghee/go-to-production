@@ -43,10 +43,10 @@ This document outlines the detailed plan to expand the `todo-app-go` implementat
     - Update `argocd-todo-app.yaml` to include a second Application for `us-east1`.
     - Commit and sync.
 - [x] **Ingress Strategy**:
-    - Implemented Multi-Cluster Ingress (MCI) with a static IP (`34.160.71.244`).
+    - Implemented Multi-Cluster Ingress (MCI) with a static IP (`MCI_IP`).
     - Refactored Terraform and Kustomize to deploy MCI only to the config cluster (`us-central1`).
 - [ ] **DNS Update**:
-    - **ACTION REQUIRED**: Update A record for `todo.smig.dev` to point to `34.160.71.244`.
+    - **ACTION REQUIRED**: Update A record for `DOMAIN_NAME` to point to `MCI_IP`.
 
 ### Phase 5: Verification & Drills
 - [ ] **Traffic Distribution**: Verify traffic is routed to the closest region.
@@ -92,15 +92,15 @@ PGPASSWORD=<password> psql -h 127.0.0.1 -p 5432 -U todo-app-sa -d todo-app \
 ```bash
 # 1. Check the MCI static IP is assigned
 kubectl get mci -n todo-app todo-app-ingress-global -o jsonpath='{.status.VIP}'
-# Expected: 34.160.71.244
+# Expected: MCI_IP
 
 # 2. After DNS update — verify resolution
-dig todo.smig.dev +short
-# Expected: 34.160.71.244
+dig DOMAIN_NAME +short
+# Expected: MCI_IP
 
 # 3. Check traffic reaches both backends
 #    (run from different regions or use curl with --resolve)
-curl -s -o /dev/null -w "%{http_code} %{time_total}s" https://todo.smig.dev/healthz
+curl -s -o /dev/null -w "%{http_code} %{time_total}s" https://DOMAIN_NAME/healthz
 
 # 4. Verify backend health on the GLB
 gcloud compute backend-services get-health todo-app-backend-service --global
@@ -127,11 +127,11 @@ kubectl --context=gke_PROJECT_us-central1_todo-cluster \
 # 4. Wait 60 seconds for GLB health checks to detect the change
 
 # 5. Verify us-east1 is serving traffic
-curl -s -o /dev/null -w "%{http_code}" https://todo.smig.dev/healthz
+curl -s -o /dev/null -w "%{http_code}" https://DOMAIN_NAME/healthz
 # Expected: 200
 
 # 6. Verify reads work (writes go to us-central1 primary — may fail or have latency)
-curl -s https://todo.smig.dev/todos | jq length
+curl -s https://DOMAIN_NAME/todos | jq length
 
 # === ADVANCED: DB PROMOTION (optional) ===
 # 7. Promote read replica to primary (DESTRUCTIVE — breaks replication)

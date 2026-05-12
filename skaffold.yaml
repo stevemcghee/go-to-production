@@ -8,7 +8,7 @@ build:
     docker:
       dockerfile: Dockerfile
   googleCloudBuild:
-    projectId: smcghee-todo-p15n-38a6
+    projectId: GCP_PROJECT_ID
     region: us-central1
 manifests:
   rawYaml:

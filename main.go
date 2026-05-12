@@ -41,7 +41,11 @@ func main() {
 
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
 	if projectID == "" {
-		projectID = "smcghee-todo-p15n-38a6"
+		projectID = os.Getenv("PROJECT_ID") // Generic fallback
+		if projectID == "" {
+			slog.Warn("GOOGLE_CLOUD_PROJECT or PROJECT_ID environment variable is not set. Defaulting to 'local-dev' for tracing/secrets.")
+			projectID = "local-dev"
+		}
 	}
 
 	// Initialize Cloud Trace
@@ -100,7 +104,7 @@ func main() {
 	// Wrap handler with tracing and security middleware
 	handler := otelhttp.NewHandler(
 		app.SecurityHeadersMiddleware(mux),
-		"go-to-production",
+		projectID,
 	)
 
 	server := &http.Server{

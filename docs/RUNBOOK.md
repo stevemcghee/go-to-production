@@ -69,7 +69,7 @@ kubectl patch app todo-app -n argocd -p '{"spec": {"syncPolicy": {"automated": {
 ### Cloud Monitoring Dashboard
 We have a custom dashboard aggregating GKE Workload, Alerting, and Cloud SQL storage metrics.
 
-*   **[Todo App Production Dashboard](https://console.cloud.google.com/monitoring/dashboards/builder/3db86f35-283e-445b-be65-8bb076e09210;customDuration=today?project=smcghee-todo-p15n-38a6&pageState=(%22eventTypes%22:(%22selected%22:%5B%22GKE_WORKLOAD_DEPLOYMENT%22,%22CLOUD_ALERTING_ALERT%22,%22CLOUD_SQL_STORAGE%22%5D)))**
+*   **[Todo App Production Dashboard](https://console.cloud.google.com/monitoring/dashboards/builder/3db86f35-283e-445b-be65-8bb076e09210;customDuration=today?project=GCP_PROJECT_ID&pageState=(%22eventTypes%22:(%22selected%22:%5B%22GKE_WORKLOAD_DEPLOYMENT%22,%22CLOUD_ALERTING_ALERT%22,%22CLOUD_SQL_STORAGE%22%5D)))**
 
 ### Accessing ArgoCD
 ArgoCD is the control plane for our GitOps workflows. To access it:
@@ -195,7 +195,7 @@ curl -s <POD_IP>:8080/metrics | grep db_writes_total
 **Detailed Health Check** (multi-region debugging):
 ```bash
 # Returns JSON with region, cluster, DB pool status, and current read routing
-curl -H "Accept: application/json" https://todo.smig.dev/healthz
+curl -H "Accept: application/json" https://DOMAIN_NAME/healthz
 ```
 
 ## Service Level Objectives (SLOs)
@@ -439,7 +439,7 @@ from the local read replica.
     # db_host points to the replica proxy port.
     gcloud secrets versions add todo-app-secret --data-file=- <<'EOF'
     {
-      "db_user": "todo-app-sa@smcghee-todo-p15n-38a6.iam",
+      "db_user": "todo-app-sa@GCP_PROJECT_ID.iam",
       "db_name": "todoapp_db",
       "db_host": "127.0.0.1",
       "db_port": "5433",
@@ -452,23 +452,23 @@ from the local read replica.
 4.  **Restart the app pods** in `us-east1` to pick up the new secret:
     ```bash
     kubectl rollout restart rollout/todo-app-go -n todo-app \
-      --context=gke_smcghee-todo-p15n-38a6_us-east1_todo-app-cluster-secondary
+      --context=gke_GCP_PROJECT_ID_us-east1_todo-app-cluster-secondary
     ```
 
 5.  **Verify** write operations succeed:
     ```bash
-    curl -X POST https://todo.smig.dev/todos \
+    curl -X POST https://DOMAIN_NAME/todos \
       -H "Content-Type: application/json" \
       -d '{"task":"failover-test"}'
     # Check detailed health
-    curl -H "Accept: application/json" https://todo.smig.dev/healthz
+    curl -H "Accept: application/json" https://DOMAIN_NAME/healthz
     ```
 
 6.  **Monitor** the promoted instance and application metrics:
     ```bash
     # Check DB routing metrics
-    curl -s https://todo.smig.dev/metrics | grep db_reads_total
-    curl -s https://todo.smig.dev/metrics | grep db_writes_total
+    curl -s https://DOMAIN_NAME/metrics | grep db_reads_total
+    curl -s https://DOMAIN_NAME/metrics | grep db_writes_total
     ```
 
 **Recovery after primary region comes back** (~30 minutes):
@@ -519,7 +519,7 @@ To restore from a specific daily backup (overwrites current data):
 
 #### Static IP Assignment
 **Issue**: The `networking.gke.io/static-ip` annotation on the `MultiClusterIngress` resource failed to apply when using a variable placeholder (e.g., `${todo_app_global_ip}`) or a resource name that hadn't propagated.
-**Solution**: Use the **literal static IP address** (e.g., `34.160.71.244`) in the annotation.
+**Solution**: Use the **literal static IP address** (e.g., `MCI_IP`) in the annotation.
 **Check**: Verify the IP is assigned by checking the VIP status:
 ```bash
 kubectl get mci -n todo-app todo-app-ingress-global -o yaml

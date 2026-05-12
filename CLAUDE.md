@@ -97,7 +97,7 @@ When starting a new milestone:
 Infrastructure deployed (GKE east, DB replica, MCI, ArgoCD). **Remaining:**
 - [ ] Verify DB replication lag and connectivity
 - [ ] Application config for region-aware DB routing (writes → primary)
-- [ ] DNS: point `todo.smig.dev` A record → `34.160.71.244`
+- [ ] DNS: point `DOMAIN_NAME` A record → `MCI_IP`
 - [ ] Verify traffic routes to nearest region
 - [ ] Run failover drill (drain us-central1, validate us-east1 serves traffic)
 - [ ] Update RUNBOOK.md to mark region failure as mitigated

@@ -5,4 +5,4 @@ metadata:
   namespace: todo-app
 spec:
   domains:
-    - todo.smig.dev
+    - DOMAIN_NAME

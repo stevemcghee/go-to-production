@@ -39,6 +39,9 @@ docker-compose up
 ```
 See [Milestone 0 Docs](docs/00_BASELINE.md) for details.
 
+**Deploy to a Fresh GCP Project:**
+To stand up the complete, production-ready architecture from scratch into an empty Google Cloud project, follow the step-by-step **[Deploy to GCP Guide](docs/DEPLOY_TO_GCP.md)**.
+
 **Explore the Production State:**
 The `main` branch contains the full cloud-native implementation.
 *   **Infrastructure**: `terraform/` — GKE, Cloud SQL, IAM, monitoring, security policies

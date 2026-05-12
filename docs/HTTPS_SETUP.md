@@ -19,10 +19,10 @@ kubectl get ingress todo-app-ingress
 You'll see output like:
 ```
 NAME               CLASS    HOSTS   ADDRESS        PORTS   AGE
-todo-app-ingress   <none>   *       34.8.118.103   80      5m
+todo-app-ingress   <none>   *       INGRESS_IP   80      5m
 ```
 
-**Note the ADDRESS** - this is your Ingress IP (e.g., `34.8.118.103`). You'll need this for DNS configuration.
+**Note the ADDRESS** - this is your Ingress IP (e.g., `INGRESS_IP`). You'll need this for DNS configuration.
 
 ## Step 2: Configure DNS
 
@@ -35,7 +35,7 @@ If your domain is `example.com` and you want to use `todo.example.com`:
 ```
 Type: A
 Name: todo
-Value: <YOUR_INGRESS_IP>  # e.g., 34.8.118.103
+Value: <YOUR_INGRESS_IP>  # e.g., INGRESS_IP
 TTL: 300 (or automatic)
 ```
 
@@ -105,7 +105,7 @@ dig todo.example.com
 nslookup todo.example.com
 ```
 
-**Expected output**: Should show your Ingress IP address (e.g., `34.8.118.103`)
+**Expected output**: Should show your Ingress IP address (e.g., `INGRESS_IP`)
 
 DNS propagation typically takes **5-15 minutes** but can take up to 48 hours depending on your DNS provider and TTL settings.
 

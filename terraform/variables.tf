@@ -56,5 +56,5 @@ variable "db_password" {
 variable "alert_email" {
   description = "Email address for monitoring alerts"
   type        = string
-  default     = "smcghee+megaToDo@google.com"
+  default     = "YOUR_EMAIL@example.com"
 }

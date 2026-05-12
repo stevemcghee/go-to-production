@@ -17,10 +17,10 @@ spec:
           echo "Waiting for Cloud SQL Proxy..."
           sleep 5
           echo "Creating IAM user..."
-          PGPASSWORD=$DB_PASSWORD psql -h 127.0.0.1 -U $DB_USER -d $DB_NAME -c "CREATE USER \"todo-app-sa@smcghee-todo-p15n-38a6.iam\" WITH LOGIN;"
-          PGPASSWORD=$DB_PASSWORD psql -h 127.0.0.1 -U $DB_USER -d $DB_NAME -c "GRANT ALL PRIVILEGES ON DATABASE todoapp_db TO \"todo-app-sa@smcghee-todo-p15n-38a6.iam\";"
-          PGPASSWORD=$DB_PASSWORD psql -h 127.0.0.1 -U $DB_USER -d $DB_NAME -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"todo-app-sa@smcghee-todo-p15n-38a6.iam\";"
-          PGPASSWORD=$DB_PASSWORD psql -h 127.0.0.1 -U $DB_USER -d $DB_NAME -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO \"todo-app-sa@smcghee-todo-p15n-38a6.iam\";"
+          PGPASSWORD=$DB_PASSWORD psql -h 127.0.0.1 -U $DB_USER -d $DB_NAME -c "CREATE USER \"todo-app-sa@GCP_PROJECT_ID.iam\" WITH LOGIN;"
+          PGPASSWORD=$DB_PASSWORD psql -h 127.0.0.1 -U $DB_USER -d $DB_NAME -c "GRANT ALL PRIVILEGES ON DATABASE todoapp_db TO \"todo-app-sa@GCP_PROJECT_ID.iam\";"
+          PGPASSWORD=$DB_PASSWORD psql -h 127.0.0.1 -U $DB_USER -d $DB_NAME -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"todo-app-sa@GCP_PROJECT_ID.iam\";"
+          PGPASSWORD=$DB_PASSWORD psql -h 127.0.0.1 -U $DB_USER -d $DB_NAME -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO \"todo-app-sa@GCP_PROJECT_ID.iam\";"
           echo "IAM user created successfully"
         env:
         - name: DB_HOST
@@ -51,6 +51,6 @@ spec:
         image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
         args:
           - "--structured-logs"
-          - "smcghee-todo-p15n-38a6:us-central1:todo-app-db-instance"
+          - "GCP_PROJECT_ID:us-central1:todo-app-db-instance"
         securityContext:
           runAsNonRoot: true

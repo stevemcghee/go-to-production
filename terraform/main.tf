@@ -15,7 +15,7 @@ terraform {
     }
   }
   backend "gcs" {
-    bucket = "tf-state-smcghee-todo-p15n-38a6"
+    # Bucket name is provided during `terraform init -backend-config="bucket=..."`
     prefix = "terraform/state"
   }
 }

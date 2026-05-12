@@ -118,7 +118,7 @@ harder.
    ```hcl
    locals {
      standard_labels = {
-       project     = "go-to-production"
+       project     = "GCP_PROJECT_ID"
        environment = "production"
        managed_by  = "terraform"
      }
