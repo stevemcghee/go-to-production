@@ -55,6 +55,7 @@ resource "helm_release" "argocd" {
 
 # 1. Create ServiceAccount in Secondary Cluster
 resource "kubernetes_service_account" "argocd_manager_secondary" {
+  count    = var.enable_multi_region ? 1 : 0
   provider = kubernetes.secondary
   metadata {
     name      = "argocd-manager"
@@ -64,6 +65,7 @@ resource "kubernetes_service_account" "argocd_manager_secondary" {
 
 # 2. Bind ServiceAccount to ClusterAdmin in Secondary Cluster
 resource "kubernetes_cluster_role_binding" "argocd_manager_secondary" {
+  count    = var.enable_multi_region ? 1 : 0
   provider = kubernetes.secondary
   metadata {
     name = "argocd-manager-role-binding"
@@ -75,19 +77,20 @@ resource "kubernetes_cluster_role_binding" "argocd_manager_secondary" {
   }
   subject {
     kind      = "ServiceAccount"
-    name      = kubernetes_service_account.argocd_manager_secondary.metadata[0].name
-    namespace = kubernetes_service_account.argocd_manager_secondary.metadata[0].namespace
+    name      = kubernetes_service_account.argocd_manager_secondary[0].metadata[0].name
+    namespace = kubernetes_service_account.argocd_manager_secondary[0].metadata[0].namespace
   }
 }
 
 # 3. Create Long-Lived Token for ServiceAccount in Secondary Cluster
 resource "kubernetes_secret" "argocd_manager_token_secondary" {
+  count    = var.enable_multi_region ? 1 : 0
   provider = kubernetes.secondary
   metadata {
     name      = "argocd-manager-token"
     namespace = "kube-system"
     annotations = {
-      "kubernetes.io/service-account.name" = kubernetes_service_account.argocd_manager_secondary.metadata[0].name
+      "kubernetes.io/service-account.name" = kubernetes_service_account.argocd_manager_secondary[0].metadata[0].name
     }
   }
   type = "kubernetes.io/service-account-token"
@@ -95,6 +98,7 @@ resource "kubernetes_secret" "argocd_manager_token_secondary" {
 
 # 4. Register Secondary Cluster in ArgoCD (Primary Cluster)
 resource "kubernetes_secret" "argocd_cluster_secondary" {
+  count = var.enable_multi_region ? 1 : 0
   metadata {
     name      = "secondary-cluster-secret"
     namespace = kubernetes_namespace.argocd.metadata[0].name
@@ -105,12 +109,12 @@ resource "kubernetes_secret" "argocd_cluster_secondary" {
 
   data = {
     name   = "us-east1"
-    server = "https://${google_container_cluster.secondary.endpoint}"
+    server = "https://${google_container_cluster.secondary[0].endpoint}"
     config = jsonencode({
-      bearerToken = kubernetes_secret.argocd_manager_token_secondary.data.token
+      bearerToken = kubernetes_secret.argocd_manager_token_secondary[0].data.token
       tlsClientConfig = {
         insecure = false
-        caData   = google_container_cluster.secondary.master_auth[0].cluster_ca_certificate
+        caData   = google_container_cluster.secondary[0].master_auth[0].cluster_ca_certificate
       }
     })
   }

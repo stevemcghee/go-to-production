@@ -45,21 +45,21 @@ resource "google_binary_authorization_policy" "policy" {
   }
 
   default_admission_rule {
-    evaluation_mode  = "REQUIRE_ATTESTATION"
+    evaluation_mode  = var.enable_binary_authorization ? "REQUIRE_ATTESTATION" : "ALWAYS_ALLOW"
     enforcement_mode = "ENFORCED_BLOCK_AND_AUDIT_LOG"
-    require_attestations_by = [
+    require_attestations_by = var.enable_binary_authorization ? [
       google_binary_authorization_attestor.cosign_attestor.name
-    ]
+    ] : []
   }
 
   # Allow system images to run without attestation
   cluster_admission_rules {
     cluster                 = "${var.region}.${google_container_cluster.primary.name}"
-    evaluation_mode         = "REQUIRE_ATTESTATION"
+    evaluation_mode         = var.enable_binary_authorization ? "REQUIRE_ATTESTATION" : "ALWAYS_ALLOW"
     enforcement_mode        = "ENFORCED_BLOCK_AND_AUDIT_LOG"
-    require_attestations_by = [
+    require_attestations_by = var.enable_binary_authorization ? [
       google_binary_authorization_attestor.cosign_attestor.name
-    ]
+    ] : []
   }
 }
 

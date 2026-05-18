@@ -2,5 +2,14 @@
 # Copy this file to 'terraform.tfvars' and fill in your actual values.
 # The 'terraform.tfvars' file is ignored by Git and should not be committed.
 
-project_id = "" # Your GCP project ID
+project_id  = "" # Your GCP project ID
 db_password = "" # A strong password for your database user
+
+# Optional: Disable Multi-Region Deployment (saves ~15 mins to deploy)
+# enable_multi_region = false
+
+# Optional: Disable Binary Authorization enforcement (if you don't want to sign images)
+# enable_binary_authorization = false
+
+# Optional: Monitoring Alert Email
+# alert_email = "YOUR_EMAIL@example.com"

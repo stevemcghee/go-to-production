@@ -53,6 +53,18 @@ variable "db_password" {
   sensitive   = true
 }
 
+variable "enable_multi_region" {
+  description = "Whether to enable multi-region deployment"
+  type        = bool
+  default     = true
+}
+
+variable "enable_binary_authorization" {
+  description = "Whether to enable Binary Authorization enforcement"
+  type        = bool
+  default     = true
+}
+
 variable "alert_email" {
   description = "Email address for monitoring alerts"
   type        = string

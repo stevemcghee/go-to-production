@@ -2,6 +2,7 @@
 
 # Register Primary Cluster
 resource "google_gke_hub_membership" "primary" {
+  count         = var.enable_multi_region ? 1 : 0
   membership_id = "primary-cluster-membership"
   endpoint {
     gke_cluster {
@@ -16,10 +17,11 @@ resource "google_gke_hub_membership" "primary" {
 
 # Register Secondary Cluster
 resource "google_gke_hub_membership" "secondary" {
+  count         = var.enable_multi_region ? 1 : 0
   membership_id = "secondary-cluster-membership"
   endpoint {
     gke_cluster {
-      resource_link = "//container.googleapis.com/${google_container_cluster.secondary.id}"
+      resource_link = "//container.googleapis.com/${google_container_cluster.secondary[0].id}"
     }
   }
   depends_on = [
@@ -30,11 +32,12 @@ resource "google_gke_hub_membership" "secondary" {
 
 # Enable Multi-Cluster Ingress Feature on the Fleet
 resource "google_gke_hub_feature" "mci" {
-  name = "multiclusteringress"
+  count    = var.enable_multi_region ? 1 : 0
+  name     = "multiclusteringress"
   location = "global"
   spec {
     multiclusteringress {
-      config_membership = google_gke_hub_membership.primary.id
+      config_membership = google_gke_hub_membership.primary[0].id
     }
   }
   depends_on = [
@@ -43,5 +46,6 @@ resource "google_gke_hub_feature" "mci" {
 }
 
 resource "google_compute_global_address" "todo_app_global_ip" {
-  name = "todo-app-global-ip"
+  count = var.enable_multi_region ? 1 : 0
+  name  = "todo-app-global-ip"
 }

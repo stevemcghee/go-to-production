@@ -27,26 +27,26 @@ output "github_actions_deployer_email" {
 }
 output "cloudsql_replica_connection_name" {
   description = "The connection name of the Cloud SQL Read Replica"
-  value       = google_sql_database_instance.read_replica.connection_name
+  value       = var.enable_multi_region ? google_sql_database_instance.read_replica[0].connection_name : ""
 }
 
 output "secondary_kubeconfig" {
   description = "Kubernetes config file for connecting to the secondary GKE cluster"
-  value       = google_container_cluster.secondary.master_auth[0].cluster_ca_certificate
+  value       = var.enable_multi_region ? google_container_cluster.secondary[0].master_auth[0].cluster_ca_certificate : ""
   sensitive   = true
 }
 
 output "secondary_cluster_name" {
   description = "The name of the secondary GKE cluster"
-  value       = google_container_cluster.secondary.name
+  value       = var.enable_multi_region ? google_container_cluster.secondary[0].name : ""
 }
 
 output "secondary_region" {
   description = "The region where the secondary cluster is located"
-  value       = google_container_cluster.secondary.location
+  value       = var.enable_multi_region ? google_container_cluster.secondary[0].location : ""
 }
 
 output "mci_static_ip" {
   description = "The static global IP for the Multi-Cluster Ingress"
-  value       = google_compute_global_address.todo_app_global_ip.address
+  value       = var.enable_multi_region ? google_compute_global_address.todo_app_global_ip[0].address : ""
 }

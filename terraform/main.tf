@@ -45,17 +45,17 @@ provider "helm" {
 provider "helm" {
   alias = "secondary"
   kubernetes {
-    host                   = "https://${google_container_cluster.secondary.endpoint}"
+    host                   = var.enable_multi_region ? "https://${google_container_cluster.secondary[0].endpoint}" : "https://localhost"
     token                  = data.google_client_config.default.access_token
-    cluster_ca_certificate = base64decode(google_container_cluster.secondary.master_auth[0].cluster_ca_certificate)
+    cluster_ca_certificate = var.enable_multi_region ? base64decode(google_container_cluster.secondary[0].master_auth[0].cluster_ca_certificate) : ""
   }
 }
 
 provider "kubernetes" {
   alias                  = "secondary"
-  host                   = "https://${google_container_cluster.secondary.endpoint}"
+  host                   = var.enable_multi_region ? "https://${google_container_cluster.secondary[0].endpoint}" : "https://localhost"
   token                  = data.google_client_config.default.access_token
-  cluster_ca_certificate = base64decode(google_container_cluster.secondary.master_auth[0].cluster_ca_certificate)
+  cluster_ca_certificate = var.enable_multi_region ? base64decode(google_container_cluster.secondary[0].master_auth[0].cluster_ca_certificate) : ""
 }
 
 # Enable necessary Google Cloud APIs
@@ -269,6 +269,7 @@ resource "google_compute_subnetwork" "private" {
 
 # Create a private subnetwork for the secondary GKE cluster
 resource "google_compute_subnetwork" "private_secondary" {
+  count         = var.enable_multi_region ? 1 : 0
   name          = "${var.project_id}-subnet-secondary"
   ip_cidr_range = "10.1.0.0/20"
   region        = var.secondary_region
@@ -335,6 +336,7 @@ resource "google_artifact_registry_repository" "my-repo" {
 
 # Create a Read Replica
 resource "google_sql_database_instance" "read_replica" {
+  count                = var.enable_multi_region ? 1 : 0
   name                 = "${var.db_instance_name}-replica"
   master_instance_name = google_sql_database_instance.main_instance.name
   region               = var.secondary_region
@@ -358,6 +360,7 @@ resource "google_sql_database_instance" "read_replica" {
 
 # Create a Secondary GKE cluster
 resource "google_container_cluster" "secondary" {
+  count                    = var.enable_multi_region ? 1 : 0
   name                     = "${var.cluster_name}-secondary"
   location                 = var.secondary_region
   deletion_protection      = false
@@ -365,7 +368,7 @@ resource "google_container_cluster" "secondary" {
   initial_node_count       = 1
 
   network    = google_compute_network.main.name
-  subnetwork = google_compute_subnetwork.private_secondary.name
+  subnetwork = google_compute_subnetwork.private_secondary[0].name
 
   ip_allocation_policy {
     cluster_ipv4_cidr_block = "/19"
@@ -412,9 +415,10 @@ resource "google_container_cluster" "secondary" {
 
 # Create a Secondary GKE node pool
 resource "google_container_node_pool" "secondary_nodes" {
-  name       = "${google_container_cluster.secondary.name}-node-pool"
+  count      = var.enable_multi_region ? 1 : 0
+  name       = "${google_container_cluster.secondary[0].name}-node-pool"
   location   = var.secondary_region
-  cluster    = google_container_cluster.secondary.name
+  cluster    = google_container_cluster.secondary[0].name
   node_count = 2
 
   node_config {

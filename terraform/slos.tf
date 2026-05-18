@@ -19,6 +19,7 @@ resource "google_monitoring_service" "todo_app" {
 
 # Service for Secondary Cluster (East)
 resource "google_monitoring_service" "todo_app_east" {
+  count        = var.enable_multi_region ? 1 : 0
   service_id   = "todo-app-go-east-svc"
   display_name = "Todo App Go Service (Secondary - East)"
   
@@ -35,6 +36,7 @@ resource "google_monitoring_service" "todo_app_east" {
 
 # Service for Global Load Balancer
 resource "google_monitoring_service" "todo_app_global" {
+  count        = var.enable_multi_region ? 1 : 0
   service_id   = "todo-app-global-lb"
   display_name = "Todo App Global LB"
   
@@ -81,7 +83,8 @@ resource "google_monitoring_slo" "availability" {
 
 # SLO: Availability (Secondary - East)
 resource "google_monitoring_slo" "availability_east" {
-  service      = google_monitoring_service.todo_app_east.service_id
+  count        = var.enable_multi_region ? 1 : 0
+  service      = google_monitoring_service.todo_app_east[0].service_id
   slo_id       = "availability-slo-east"
   display_name = "99.9% Availability SLO (East)"
 
@@ -111,7 +114,8 @@ resource "google_monitoring_slo" "availability_east" {
 
 # SLO: Global Availability (Load Balancer)
 resource "google_monitoring_slo" "availability_global" {
-  service      = google_monitoring_service.todo_app_global.service_id
+  count        = var.enable_multi_region ? 1 : 0
+  service      = google_monitoring_service.todo_app_global[0].service_id
   slo_id       = "availability-slo-global"
   display_name = "99.99% Global Availability SLO"
 
