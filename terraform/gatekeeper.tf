@@ -13,7 +13,8 @@ resource "helm_release" "gatekeeper" {
 }
 
 resource "helm_release" "gatekeeper_secondary" {
-  provider = helm.secondary
+  count      = var.enable_multi_region ? 1 : 0
+  provider   = helm.secondary
   name       = "gatekeeper"
   repository = "https://open-policy-agent.github.io/gatekeeper/charts"
   chart      = "gatekeeper"

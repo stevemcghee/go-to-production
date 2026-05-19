@@ -8,7 +8,8 @@ resource "helm_release" "argo_rollouts" {
 }
 
 resource "helm_release" "argo_rollouts_secondary" {
-  provider = helm.secondary
+  count      = var.enable_multi_region ? 1 : 0
+  provider   = helm.secondary
   name       = "argo-rollouts"
   repository = "https://argoproj.github.io/argo-helm"
   chart      = "argo-rollouts"

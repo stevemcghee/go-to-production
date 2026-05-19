@@ -7,6 +7,7 @@ resource "google_monitoring_notification_channel" "email" {
 }
 
 resource "google_monitoring_alert_policy" "high_error_rate" {
+  count        = var.enable_slos ? 1 : 0
   display_name = "High Error Rate (HTTP 5xx)"
   combiner     = "OR"
   conditions {
