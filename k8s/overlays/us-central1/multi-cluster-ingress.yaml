@@ -4,8 +4,8 @@ metadata:
   name: todo-app-ingress-global
   namespace: todo-app
   annotations:
-    networking.gke.io/static-ip: "MCI_IP"
-    networking.gke.io/pre-shared-certs: "MANAGED_CERT_NAME"
+    networking.gke.io/static-ip: "todo-app-ip"
+    networking.gke.io/pre-shared-certs: "todo-app-cert"
 spec:
   template:
     spec:

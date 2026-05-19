@@ -2,6 +2,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: todo-app-load-generator
+  namespace: todo-app
   labels:
     app: load-generator
 spec:

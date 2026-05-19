@@ -5,6 +5,7 @@ metadata:
   namespace: todo-app
   annotations:
     kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: "todo-app-ip"
     networking.gke.io/managed-certificates: "todo-app-cert"
     kubernetes.io/ingress.allow-http: "true"
 spec:

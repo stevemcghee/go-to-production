@@ -46,7 +46,7 @@ output "secondary_region" {
   value       = var.enable_multi_region ? google_container_cluster.secondary[0].location : ""
 }
 
-output "mci_static_ip" {
-  description = "The static global IP for the Multi-Cluster Ingress"
-  value       = var.enable_multi_region ? google_compute_global_address.todo_app_global_ip[0].address : ""
+output "lb_static_ip" {
+  description = "The static global IP for the L7 Load Balancer"
+  value       = (var.enable_multi_region || var.enable_l7_lb) ? google_compute_global_address.todo_app_ip[0].address : ""
 }

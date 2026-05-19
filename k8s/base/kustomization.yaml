@@ -1,27 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: todo-app
 resources:
-  - namespace.yaml
-  - serviceaccount.yaml
-  - service.yaml
-  - hpa.yaml
-  - managed-certificate.yaml
-  - multi-cluster-service.yaml
-  - backend-config.yaml
-  - create-iam-user-job.yaml
-  - db-init-job.yaml
-  - verify-job.yaml
-  - load-generator.yaml
-  - pod-monitoring.yaml
-  - policies/template-required-labels.yaml
-  - policies/constraint-ns-owner.yaml
-  - rollouts/analysis-smoke-test.yaml
-  - rollouts/todo-app-rollout.yaml
-  - pdb.yaml
-  - policies/template-disallow-latest.yaml
-  - policies/constraint-no-latest-tag.yaml
-  - policies/template-required-resource-limits.yaml
-  - policies/constraint-resource-limits.yaml
+- namespace.yaml
+- serviceaccount.yaml
+- service.yaml
+- ingress.yaml
+- hpa.yaml
+- managed-certificate.yaml
+- backend-config.yaml
+- create-iam-user-job.yaml
+- db-init-job.yaml
+- verify-job.yaml
+- load-generator.yaml
+- pod-monitoring.yaml
+- policies/template-required-labels.yaml
+- policies/constraint-ns-owner.yaml
+- rollouts/analysis-smoke-test.yaml
+- rollouts/todo-app-rollout.yaml
+- pdb.yaml
+- policies/template-disallow-latest.yaml
+- policies/constraint-no-latest-tag.yaml
+- policies/template-required-resource-limits.yaml
+- policies/constraint-resource-limits.yaml
 
 images:
-  - name: todo-app-go
-    newName: us-central1-docker.pkg.dev/GCP_PROJECT_ID/todo-app-go/todo-app-go
-    digest: sha256:1666a23e5a5dd98b9c0dfca58bf8104d68b8c90e60418cf95c1a77a2e1bf3de5
+- name: todo-app-go
+  newName: us-central1-docker.pkg.dev/irtco-sandbox/todo-app-go/todo-app-go
+  newTag: v1-20260519-2212

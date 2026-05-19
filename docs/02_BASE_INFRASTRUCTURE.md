@@ -101,7 +101,7 @@ Configure the following in your GitHub repository's settings (`Settings > Secret
     *   **Purpose:** Allows GitHub Actions to authenticate with Google Cloud.
 
 #### GitHub Variables
-*   **`GCP_PROJECT_ID`**:
+*   **`irtco-sandbox`**:
     *   **Value:** Your Google Cloud Project ID.
 *   **`GCR_HOSTNAME`**:
     *   **Value:** The hostname for Google Artifact Registry (e.g., `us-central1-docker.pkg.dev`).

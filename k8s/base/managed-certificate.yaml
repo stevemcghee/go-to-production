@@ -5,4 +5,4 @@ metadata:
   namespace: todo-app
 spec:
   domains:
-    - DOMAIN_NAME
+    - todo-irtco-sandbox.example.com

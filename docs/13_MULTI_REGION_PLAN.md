@@ -46,7 +46,7 @@ This document outlines the detailed plan to expand the `todo-app-go` implementat
     - Implemented Multi-Cluster Ingress (MCI) with a static IP (`MCI_IP`).
     - Refactored Terraform and Kustomize to deploy MCI only to the config cluster (`us-central1`).
 - [ ] **DNS Update**:
-    - **ACTION REQUIRED**: Update A record for `DOMAIN_NAME` to point to `MCI_IP`.
+    - **ACTION REQUIRED**: Update A record for `todo-irtco-sandbox.example.com` to point to `MCI_IP`.
 
 ### Phase 5: Verification & Drills
 - [ ] **Traffic Distribution**: Verify traffic is routed to the closest region.
@@ -95,12 +95,12 @@ kubectl get mci -n todo-app todo-app-ingress-global -o jsonpath='{.status.VIP}'
 # Expected: MCI_IP
 
 # 2. After DNS update — verify resolution
-dig DOMAIN_NAME +short
+dig todo-irtco-sandbox.example.com +short
 # Expected: MCI_IP
 
 # 3. Check traffic reaches both backends
 #    (run from different regions or use curl with --resolve)
-curl -s -o /dev/null -w "%{http_code} %{time_total}s" https://DOMAIN_NAME/healthz
+curl -s -o /dev/null -w "%{http_code} %{time_total}s" https://todo-irtco-sandbox.example.com/healthz
 
 # 4. Verify backend health on the GLB
 gcloud compute backend-services get-health todo-app-backend-service --global
@@ -127,11 +127,11 @@ kubectl --context=gke_PROJECT_us-central1_todo-cluster \
 # 4. Wait 60 seconds for GLB health checks to detect the change
 
 # 5. Verify us-east1 is serving traffic
-curl -s -o /dev/null -w "%{http_code}" https://DOMAIN_NAME/healthz
+curl -s -o /dev/null -w "%{http_code}" https://todo-irtco-sandbox.example.com/healthz
 # Expected: 200
 
 # 6. Verify reads work (writes go to us-central1 primary — may fail or have latency)
-curl -s https://DOMAIN_NAME/todos | jq length
+curl -s https://todo-irtco-sandbox.example.com/todos | jq length
 
 # === ADVANCED: DB PROMOTION (optional) ===
 # 7. Promote read replica to primary (DESTRUCTIVE — breaks replication)

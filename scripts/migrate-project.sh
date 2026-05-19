@@ -17,12 +17,12 @@ set -euo pipefail
 # ─────────────────────────────────────────────────────────────────────────────
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
-OLD_PROJECT="GCP_PROJECT_ID"
-OLD_STATE_BUCKET="tf-state-GCP_PROJECT_ID"
+OLD_PROJECT="irtco-sandbox"
+OLD_STATE_BUCKET="tf-state-irtco-sandbox"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CHECKPOINT_FILE="${REPO_ROOT}/.migration-checkpoint"
 LOG_FILE="${REPO_ROOT}/.migration-$(date +%Y%m%d-%H%M%S).log"
-DOMAIN="DOMAIN_NAME"
+DOMAIN="todo-irtco-sandbox.example.com"
 DNS_ZONE="DNS_ZONE"
 OLD_MCI_IP="MCI_IP"
 

@@ -8,7 +8,7 @@ build:
     docker:
       dockerfile: Dockerfile
   googleCloudBuild:
-    projectId: GCP_PROJECT_ID
+    projectId: irtco-sandbox
     region: us-central1
 manifests:
   rawYaml:

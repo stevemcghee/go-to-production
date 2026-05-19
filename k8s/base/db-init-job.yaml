@@ -2,6 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: db-init
+  namespace: todo-app
   labels:
     app: todo-app-go
 spec:
@@ -32,8 +33,8 @@ spec:
                 task TEXT NOT NULL,
                 completed BOOLEAN DEFAULT FALSE
             );
-            GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "todo-app-sa@GCP_PROJECT_ID.iam";
-            GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "todo-app-sa@GCP_PROJECT_ID.iam";
+            GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "todo-app-sa@irtco-sandbox.iam";
+            GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "todo-app-sa@irtco-sandbox.iam";
             EOF
             echo "Database initialization complete!"
             echo "Terminating sidecar..."
@@ -67,7 +68,7 @@ spec:
         image: gcr.io/cloudsql-docker/gce-proxy:1.17
         command:
           - "/cloud_sql_proxy"
-          - "-instances=GCP_PROJECT_ID:us-central1:todo-app-db-instance=tcp:5432"
+          - "-instances=irtco-sandbox:us-central1:todo-app-db-instance=tcp:5432"
         securityContext:
           runAsNonRoot: true
         resources:

@@ -26,7 +26,7 @@ Before starting, ensure:
 - [ ] `gcloud` CLI authenticated with Owner/Editor on both old and new projects
 - [ ] Terraform >= 1.5 installed locally
 - [ ] `kubectl`, `helm`, `kustomize`, `cosign` installed
-- [ ] DNS control over `${DOMAIN_NAME}` (or whatever domain is in use)
+- [ ] DNS control over `${todo-irtco-sandbox.example.com}` (or whatever domain is in use)
 - [ ] GitHub repository admin access (for secrets/OIDC updates)
 - [ ] Current database backup verified (run a restore test first)
 - [ ] Record the new project ID — referred to as `${NEW_PROJECT}` below
@@ -66,7 +66,7 @@ First, set these environment variables in your terminal to make the following co
 export OLD_PROJECT="your-old-project-id"
 export NEW_PROJECT="your-new-project-id"
 export BILLING_ACCOUNT_ID="your-billing-account-id"
-export DOMAIN_NAME="todo.smig.dev"
+export todo-irtco-sandbox.example.com="todo.smig.dev"
 export DNS_ZONE="smig-dev-zone"
 export OLD_MCI_IP="34.160.71.244"
 ```
@@ -380,18 +380,18 @@ and minutes to propagate.
 
 ### 5.2 Execute DNS cutover
 
-Update the A record for `${DOMAIN_NAME}`:
+Update the A record for `${todo-irtco-sandbox.example.com}`:
 
 ```
-Old: ${DOMAIN_NAME} → ${OLD_MCI_IP}  (old project MCI IP)
-New: ${DOMAIN_NAME} → ${NEW_MCI_IP}     (new project MCI IP)
+Old: ${todo-irtco-sandbox.example.com} → ${OLD_MCI_IP}  (old project MCI IP)
+New: ${todo-irtco-sandbox.example.com} → ${NEW_MCI_IP}     (new project MCI IP)
 ```
 
 Set a low TTL (60s) on the record before cutover to speed propagation.
 
 ```bash
 # If using Cloud DNS:
-gcloud dns record-sets update ${DOMAIN_NAME} \
+gcloud dns record-sets update ${todo-irtco-sandbox.example.com} \
   --zone=${DNS_ZONE} \
   --type=A \
   --ttl=60 \
@@ -404,7 +404,7 @@ gcloud dns record-sets update ${DOMAIN_NAME} \
 
 ```bash
 # Watch DNS propagation
-watch -n5 dig +short ${DOMAIN_NAME}
+watch -n5 dig +short ${todo-irtco-sandbox.example.com}
 
 # Monitor error rate in new project
 # Open the Cloud Monitoring dashboard:
@@ -495,7 +495,7 @@ If problems are discovered after DNS cutover:
 
 1. Revert DNS to old project's MCI IP:
    ```bash
-   gcloud dns record-sets update ${DOMAIN_NAME} \
+   gcloud dns record-sets update ${todo-irtco-sandbox.example.com} \
      --zone=${DNS_ZONE} --type=A --ttl=60 \
      --rrdatas=${OLD_MCI_IP}
    ```

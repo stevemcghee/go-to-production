@@ -22,11 +22,13 @@ fi
 
 # --- 1. Prepare the Repository (Placeholder Replacement) ---
 echo "Replacing placeholders in repository..."
-grep -rl 'GCP_PROJECT_ID' . --exclude-dir=.git --exclude='scripts/quick-deploy.sh' | xargs sed -i.bak "s/GCP_PROJECT_ID/${PROJECT_ID}/g"
-# We don't replace DOMAIN_NAME here yet; single-region quick-deploy will use IP/Service LoadBalancer if needed, 
+grep -rl 'irtco-sandbox' . --exclude-dir=.git --exclude='scripts/quick-deploy.sh' | xargs -r sed -i.bak "s/irtco-sandbox/${PROJECT_ID}/g"
+# Also replace 'go-to-production' project ID in K8s configs if they slipped through
+grep -rl 'go-to-production' k8s/ --exclude-dir=.git | xargs -r sed -i.bak "s/go-to-production/${PROJECT_ID}/g"
+# We don't replace todo-irtco-sandbox.example.com here yet; single-region quick-deploy will use IP/Service LoadBalancer if needed, 
 # but the existing K8s configs use Ingress. We'll leave them for now or provide instructions.
 # Quick fix for ManagedCertificate validation error:
-grep -rl 'DOMAIN_NAME' . --exclude-dir=.git --exclude='scripts/quick-deploy.sh' | xargs sed -i.bak "s/DOMAIN_NAME/todo-${PROJECT_ID}.example.com/g"
+grep -rl 'todo-irtco-sandbox.example.com' . --exclude-dir=.git --exclude='scripts/quick-deploy.sh' | xargs -r sed -i.bak "s/todo-irtco-sandbox.example.com/todo-${PROJECT_ID}.example.com/g"
 # Remove multi-cluster-service from kustomization since MCI is disabled
 sed -i.bak '/- multi-cluster-service.yaml/d' k8s/base/kustomization.yaml
 # Remove the read-replica connection string from the Cloud SQL proxy since it doesn't exist
@@ -44,6 +46,7 @@ project_id                  = "${PROJECT_ID}"
 db_password                 = "${DB_PASSWORD}"
 alert_email                 = "${ALERT_EMAIL}"
 enable_multi_region         = false
+enable_l7_lb                = true
 enable_binary_authorization = false
 enable_slos                 = false
 EOF
@@ -63,7 +66,7 @@ gcloud container clusters get-credentials todo-app-cluster --region=${REGION} --
 
 echo "Creating Kubernetes secrets..."
 # Create the namespace first so we can put the secret in it
-kubectl create namespace todo-app --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f ../k8s/base/namespace.yaml
 kubectl create secret generic db-credentials \
   --namespace=todo-app \
   --from-literal=username=todoappuser \

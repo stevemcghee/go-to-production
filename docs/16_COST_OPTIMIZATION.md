@@ -118,7 +118,7 @@ harder.
    ```hcl
    locals {
      standard_labels = {
-       project     = "GCP_PROJECT_ID"
+       project     = "irtco-sandbox"
        environment = "production"
        managed_by  = "terraform"
      }

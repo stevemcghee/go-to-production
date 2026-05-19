@@ -59,6 +59,12 @@ variable "enable_multi_region" {
   default     = true
 }
 
+variable "enable_l7_lb" {
+  description = "Whether to enable L7 Load Balancer for single region"
+  type        = bool
+  default     = false
+}
+
 variable "enable_binary_authorization" {
   description = "Whether to enable Binary Authorization enforcement"
   type        = bool

@@ -7,7 +7,7 @@ admissionWhitelistPatterns:
 - namePattern: docker.io/library/postgres:*
 - namePattern: docker.io/curlimages/curl:*
 - namePattern: gcr.io/cloud-sql-connectors/cloud-sql-proxy:*
-- namePattern: us-central1-docker.pkg.dev/GCP_PROJECT_ID/todo-app-go/*
+- namePattern: us-central1-docker.pkg.dev/irtco-sandbox/todo-app-go/*
 - namePattern: docker.io/openpolicyagent/*
 - namePattern: index.docker.io/openpolicyagent/*
 - namePattern: registry.hub.docker.com/openpolicyagent/*
@@ -18,15 +18,15 @@ clusterAdmissionRules:
     enforcementMode: ENFORCED_BLOCK_AND_AUDIT_LOG
     evaluationMode: REQUIRE_ATTESTATION
     requireAttestationsBy:
-    - projects/GCP_PROJECT_ID/attestors/cosign-attestor
+    - projects/irtco-sandbox/attestors/cosign-attestor
   us-east1.todo-app-cluster-secondary:
     enforcementMode: ENFORCED_BLOCK_AND_AUDIT_LOG
     evaluationMode: REQUIRE_ATTESTATION
     requireAttestationsBy:
-    - projects/GCP_PROJECT_ID/attestors/cosign-attestor
+    - projects/irtco-sandbox/attestors/cosign-attestor
 defaultAdmissionRule:
   enforcementMode: ENFORCED_BLOCK_AND_AUDIT_LOG
   evaluationMode: REQUIRE_ATTESTATION
   requireAttestationsBy:
-  - projects/GCP_PROJECT_ID/attestors/cosign-attestor
-name: projects/GCP_PROJECT_ID/policy
+  - projects/irtco-sandbox/attestors/cosign-attestor
+name: projects/irtco-sandbox/policy

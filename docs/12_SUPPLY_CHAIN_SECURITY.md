@@ -60,12 +60,12 @@ We implemented a complete supply chain security pipeline using industry-standard
 ```bash
 # List recent images
 gcloud artifacts docker images list \
-  us-central1-docker.pkg.dev/GCP_PROJECT_ID/todo-app-go/todo-app-go \
+  us-central1-docker.pkg.dev/irtco-sandbox/todo-app-go/todo-app-go \
   --limit=5
 
 # View vulnerabilities for a specific image
 gcloud artifacts docker images describe \
-  us-central1-docker.pkg.dev/GCP_PROJECT_ID/todo-app-go/todo-app-go@sha256:DIGEST \
+  us-central1-docker.pkg.dev/irtco-sandbox/todo-app-go/todo-app-go@sha256:DIGEST \
   --show-package-vulnerability
 ```
 
@@ -76,7 +76,7 @@ brew install cosign
 
 # Verify the signature on an image
 cosign verify \
-  us-central1-docker.pkg.dev/GCP_PROJECT_ID/todo-app-go/todo-app-go:TAG \
+  us-central1-docker.pkg.dev/irtco-sandbox/todo-app-go/todo-app-go:TAG \
   --certificate-identity-regexp="https://github.com/stevemcghee/go-to-production/.*" \
   --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
 ```
@@ -135,7 +135,7 @@ The new supply chain security flow:
 1. Verify the image was built by GitHub Actions (check workflow logs)
 2. Check if the image has a signature:
    ```bash
-   cosign verify us-central1-docker.pkg.dev/GCP_PROJECT_ID/todo-app-go/todo-app-go:TAG \
+   cosign verify us-central1-docker.pkg.dev/irtco-sandbox/todo-app-go/todo-app-go:TAG \
      --certificate-identity-regexp="https://github.com/stevemcghee/go-to-production/.*" \
      --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
    ```

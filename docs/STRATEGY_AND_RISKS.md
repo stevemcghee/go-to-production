@@ -100,7 +100,7 @@ This document details the risk analysis, mitigation strategies, and future roadm
 *   **Remaining**:
     *   ❌ Verify DB replication lag and connectivity
     *   ❌ Application config for region-aware DB routing
-    *   ❌ DNS: point `DOMAIN_NAME` → `MCI_IP`
+    *   ❌ DNS: point `todo-irtco-sandbox.example.com` → `MCI_IP`
     *   ❌ Verify traffic routes to nearest region
     *   ❌ Failover drill (drain us-central1, validate us-east1)
     *   ❌ Update RUNBOOK.md to mark region failure mitigated

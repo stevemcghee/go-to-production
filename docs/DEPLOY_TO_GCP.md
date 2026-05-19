@@ -25,7 +25,7 @@ Export these variables in your terminal to make the rest of the commands fully c
 ```bash
 export PROJECT_ID="your-new-project-id"
 export BILLING_ACCOUNT_ID="XXXXXX-XXXXXX-XXXXXX" # Find via: gcloud billing accounts list
-export DOMAIN_NAME="todo.yourdomain.com"
+export todo-irtco-sandbox.example.com="todo.yourdomain.com"
 export DNS_ZONE="your-dns-zone"
 export GITHUB_REPO="your-github-user/go-to-production"
 export ALERT_EMAIL="your-email@example.com"
@@ -41,10 +41,10 @@ Run these commands in the root of the repository to replace the placeholders glo
 
 ```bash
 # 1. Replace Project ID
-grep -rl 'GCP_PROJECT_ID' . --exclude-dir=.git | xargs sed -i.bak "s/GCP_PROJECT_ID/${PROJECT_ID}/g"
+grep -rl 'irtco-sandbox' . --exclude-dir=.git | xargs sed -i.bak "s/irtco-sandbox/${PROJECT_ID}/g"
 
 # 2. Replace Domain Name
-grep -rl 'DOMAIN_NAME' . --exclude-dir=.git | xargs sed -i.bak "s/DOMAIN_NAME/${DOMAIN_NAME}/g"
+grep -rl 'todo-irtco-sandbox.example.com' . --exclude-dir=.git | xargs sed -i.bak "s/todo-irtco-sandbox.example.com/${todo-irtco-sandbox.example.com}/g"
 
 # 3. Replace DNS Zone
 grep -rl 'DNS_ZONE' . --exclude-dir=.git | xargs sed -i.bak "s/DNS_ZONE/${DNS_ZONE}/g"
@@ -229,14 +229,14 @@ Point your domain to the Multi-Cluster Ingress (MCI) IP address provisioned by T
 echo "Your MCI Ingress IP is: ${MCI_IP}"
 
 # If you use Google Cloud DNS, update it automatically:
-gcloud dns record-sets update ${DOMAIN_NAME} \
+gcloud dns record-sets update ${todo-irtco-sandbox.example.com} \
   --zone=${DNS_ZONE} \
   --type=A \
   --ttl=60 \
   --rrdatas=${MCI_IP}
 ```
 
-Wait a few minutes for DNS to propagate, then visit `https://${DOMAIN_NAME}/healthz` to verify your fresh deployment!
+Wait a few minutes for DNS to propagate, then visit `https://${todo-irtco-sandbox.example.com}/healthz` to verify your fresh deployment!
 
 ---
 

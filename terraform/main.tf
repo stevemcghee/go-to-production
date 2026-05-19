@@ -253,6 +253,12 @@ resource "google_container_node_pool" "primary_nodes" {
   }
 }
 
+# Create a static global IP address for the Load Balancer
+resource "google_compute_global_address" "todo_app_ip" {
+  count = var.enable_multi_region || var.enable_l7_lb ? 1 : 0
+  name  = "todo-app-ip"
+}
+
 # Create a custom VPC network
 resource "google_compute_network" "main" {
   name                    = "${var.project_id}-vpc"

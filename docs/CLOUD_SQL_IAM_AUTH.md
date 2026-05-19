@@ -59,7 +59,7 @@ Updated connection string to use IAM authentication:
 
 ```go
 // Use truncated service account email for IAM authentication
-dbUser := "todo-app-sa@GCP_PROJECT_ID.iam"
+dbUser := "todo-app-sa@irtco-sandbox.iam"
 dbName := os.Getenv("DB_NAME")
 dbHost := os.Getenv("DB_HOST")
 dbPort := os.Getenv("DB_PORT")
@@ -85,7 +85,7 @@ spec:
     args:
       - "--structured-logs"
       - "--auto-iam-authn"  # Enable IAM authentication
-      - "GCP_PROJECT_ID:us-central1:todo-app-db-instance"
+      - "irtco-sandbox:us-central1:todo-app-db-instance"
 ```
 
 **Important**: No `--impersonate-service-account` flag is needed when Workload Identity is properly configured.
@@ -99,7 +99,7 @@ kind: ServiceAccount
 metadata:
   name: todo-app-sa
   annotations:
-    iam.gke.io/gcp-service-account: todo-app-sa@GCP_PROJECT_ID.iam.gserviceaccount.com
+    iam.gke.io/gcp-service-account: todo-app-sa@irtco-sandbox.iam.gserviceaccount.com
 ```
 
 ## Architecture

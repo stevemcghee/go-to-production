@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/stevemcghee/go-to-production.git'
+    repoURL: 'https://github.com/stevemcghee/irtco-sandbox.git'
     targetRevision: main
     path: k8s
   destination:

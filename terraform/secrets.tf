@@ -26,7 +26,7 @@ resource "google_secret_manager_secret_version" "app_secret_version" {
     db_name      = var.db_database_name
     db_host      = "127.0.0.1"
     db_port      = "5432"
-    db_read_host = "127.0.0.1"
-    db_read_port = "5433"
+    db_read_host = var.enable_multi_region ? "127.0.0.1" : ""
+    db_read_port = var.enable_multi_region ? "5433" : ""
   })
 }
