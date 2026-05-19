@@ -39,6 +39,7 @@ db_password                 = "${DB_PASSWORD}"
 alert_email                 = "${ALERT_EMAIL}"
 enable_multi_region         = false
 enable_binary_authorization = false
+enable_slos                 = false
 EOF
 
 echo "Initializing Terraform..."

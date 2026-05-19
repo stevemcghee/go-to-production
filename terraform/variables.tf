@@ -65,6 +65,12 @@ variable "enable_binary_authorization" {
   default     = true
 }
 
+variable "enable_slos" {
+  description = "Whether to create SLOs and Alerts (requires app to be deployed first to generate metrics)"
+  type        = bool
+  default     = false
+}
+
 variable "alert_email" {
   description = "Email address for monitoring alerts"
   type        = string

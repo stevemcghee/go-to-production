@@ -11,5 +11,10 @@ db_password = "" # A strong password for your database user
 # Optional: Disable Binary Authorization enforcement (if you don't want to sign images)
 # enable_binary_authorization = false
 
+# Optional: Enable SLOs and Alerting
+# IMPORTANT: Only enable this AFTER the application has been deployed and is generating traffic, 
+# otherwise Terraform will fail because the required Prometheus metrics won't exist yet.
+# enable_slos = true
+
 # Optional: Monitoring Alert Email
 # alert_email = "YOUR_EMAIL@example.com"
