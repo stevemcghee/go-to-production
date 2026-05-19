@@ -54,9 +54,22 @@ terraform init -backend-config="bucket=tf-state-${PROJECT_ID}" -reconfigure
 echo "Applying Terraform (this may take 15-20 minutes)..."
 terraform apply -auto-approve
 
+echo "Waiting 30 seconds for IAM bindings (Workload Identity) to propagate..."
+sleep 30
+
 # --- 3. Database & App Deployment ---
 echo "Setting up kubectl context..."
 gcloud container clusters get-credentials todo-app-cluster --region=${REGION} --project=${PROJECT_ID}
+
+echo "Creating Kubernetes secrets..."
+# Create the namespace first so we can put the secret in it
+kubectl create namespace todo-app --dry-run=client -o yaml | kubectl apply -f -
+kubectl create secret generic db-credentials \
+  --namespace=todo-app \
+  --from-literal=username=todoappuser \
+  --from-literal=password=$DB_PASSWORD \
+  --from-literal=dbname=todoapp_db \
+  --dry-run=client -o yaml | kubectl apply -f -
 
 echo "Initializing Database..."
 kubectl apply -f ../k8s/base/create-iam-user-job.yaml
