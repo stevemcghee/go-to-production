@@ -23,10 +23,10 @@ fi
 # --- 1. Prepare the Repository (Placeholder Replacement) ---
 echo "Replacing placeholders in repository..."
 grep -rl 'GCP_PROJECT_ID' . --exclude-dir=.git --exclude='scripts/quick-deploy.sh' | xargs sed -i.bak "s/GCP_PROJECT_ID/${PROJECT_ID}/g"
-# We don't replace todo-app.example.com here yet; single-region quick-deploy will use IP/Service LoadBalancer if needed, 
+# We don't replace DOMAIN_NAME here yet; single-region quick-deploy will use IP/Service LoadBalancer if needed, 
 # but the existing K8s configs use Ingress. We'll leave them for now or provide instructions.
 # Quick fix for ManagedCertificate validation error:
-grep -rl 'todo-app.example.com' . --exclude-dir=.git --exclude='scripts/quick-deploy.sh' | xargs sed -i.bak "s/todo-app.example.com/todo-${PROJECT_ID}.example.com/g"
+grep -rl 'DOMAIN_NAME' . --exclude-dir=.git --exclude='scripts/quick-deploy.sh' | xargs sed -i.bak "s/DOMAIN_NAME/todo-${PROJECT_ID}.example.com/g"
 find . -name "*.bak" -type f -delete
 
 # --- 2. Infrastructure Setup (Terraform) ---

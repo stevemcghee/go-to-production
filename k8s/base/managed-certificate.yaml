@@ -5,4 +5,4 @@ metadata:
   namespace: todo-app
 spec:
   domains:
-    - todo-app.example.com
+    - DOMAIN_NAME
