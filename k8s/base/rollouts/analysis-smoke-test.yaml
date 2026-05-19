@@ -2,6 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: AnalysisTemplate
 metadata:
   name: smoke-test
+  namespace: todo-app
 spec:
   metrics:
   - name: health-check
