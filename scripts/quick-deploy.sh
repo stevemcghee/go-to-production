@@ -29,6 +29,8 @@ grep -rl 'GCP_PROJECT_ID' . --exclude-dir=.git --exclude='scripts/quick-deploy.s
 grep -rl 'DOMAIN_NAME' . --exclude-dir=.git --exclude='scripts/quick-deploy.sh' | xargs sed -i.bak "s/DOMAIN_NAME/todo-${PROJECT_ID}.example.com/g"
 # Remove multi-cluster-service from kustomization since MCI is disabled
 sed -i.bak '/- multi-cluster-service.yaml/d' k8s/base/kustomization.yaml
+# Remove the read-replica connection string from the Cloud SQL proxy since it doesn't exist
+sed -i.bak '/- ".*todo-app-db-instance-replica?port=5433"/d' k8s/base/rollouts/todo-app-rollout.yaml
 find . -name "*.bak" -type f -delete
 
 # --- 2. Infrastructure Setup (Terraform) ---
