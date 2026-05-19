@@ -79,7 +79,8 @@ cd ../..
 
 echo "Deploying to GKE..."
 # For quick-deploy, we apply directly. ArgoCD is also installed and can be used later.
-kubectl apply -k k8s/base
+# We run apply twice with a short delay to handle OPA Gatekeeper CRD generation race conditions.
+kubectl apply -k k8s/base || { echo "Waiting for Gatekeeper CRDs to register..."; sleep 10; kubectl apply -k k8s/base; }
 
 echo "--------------------------------------------"
 echo "Deployment Complete!"
