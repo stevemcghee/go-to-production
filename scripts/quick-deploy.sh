@@ -27,6 +27,8 @@ grep -rl 'GCP_PROJECT_ID' . --exclude-dir=.git --exclude='scripts/quick-deploy.s
 # but the existing K8s configs use Ingress. We'll leave them for now or provide instructions.
 # Quick fix for ManagedCertificate validation error:
 grep -rl 'DOMAIN_NAME' . --exclude-dir=.git --exclude='scripts/quick-deploy.sh' | xargs sed -i.bak "s/DOMAIN_NAME/todo-${PROJECT_ID}.example.com/g"
+# Remove multi-cluster-service from kustomization since MCI is disabled
+sed -i.bak '/- multi-cluster-service.yaml/d' k8s/base/kustomization.yaml
 find . -name "*.bak" -type f -delete
 
 # --- 2. Infrastructure Setup (Terraform) ---
