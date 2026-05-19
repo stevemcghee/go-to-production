@@ -166,14 +166,40 @@ See the [Reliability Ladder](docs/STRATEGY_AND_RISKS.md#estimates--nines) for ho
 
 ## Estimated Daily Costs
 
+This project currently costs approximately **$30.00 / day** to run in its fully production-ready, multi-region state. Below is the breakdown and how our milestones influenced this cost curve.
+
+### Phase Evolution
+
 | Phase | Est. Daily Cost | What Changed |
 |:------|:----------------|:-------------|
 | Baseline (M0) | $0.00 | Local Docker only |
 | Base Infra (M2) | ~$6.00 | GKE + Cloud SQL provisioned |
 | HA & Scale (M3) | ~$15.00 | Regional GKE (3 zones), HA Cloud SQL + replica |
 | Observability (M7–9) | ~$16.50 | Cloud Trace, logging volume |
-| GitOps + Policy (M10–11) | **~$17.00** | ArgoCD, Gatekeeper, GKE Backup |
-| Multi-Region (M13) | **~$34.00** | Second cluster + replica (est.) |
+| GitOps + Policy (M10–11) | ~$17.00 | ArgoCD, Gatekeeper, GKE Backup |
+| Multi-Region (M13) | **~$30.00** | Second cluster + replica |
+
+### Multi-Region State Breakdown
+
+| Category | Est. Daily Cost | Details |
+| :--- | :--- | :--- |
+| **Compute Engine** | $15.34 | 12x `e2-medium` nodes (across 2 regions). |
+| **Cloud SQL** | $5.60 | HA Primary (Regional) + Read Replica (Zonal). |
+| **Kubernetes Engine** | $4.80 | Management fee for 2 Regional clusters. |
+| **Cloud Monitoring** | $2.80 | Metrics & Logging ingestion. |
+| **Networking** | $0.89 | Multi-Cluster Ingress & Data Transfer. |
+| **Total** | **~$29.43** | |
+
+### Single-Region State (Reference)
+
+| Category | Est. Daily Cost | Details |
+| :--- | :--- | :--- |
+| **GKE Management** | $2.40 | Fixed cluster management fee for a regional cluster. |
+| **Compute Nodes** | ~$4.80 | 6x `e2-medium` nodes (2 per zone in a 3-zone regional cluster). |
+| **Networking** | ~$1.20 | Global External Load Balancer + Data Transfer. |
+| **Observability** | ~$2.40 | Cloud Logging, Cloud Trace, and GKE Backup ingestion. |
+| **Cloud SQL** | ~$6.20 | Regional HA Instance + Read Replica. |
+| **Total** | **~$17.00** | |
 
 ![Daily Cost Evolution](docs/images/daily_cost_chart.png)
 

@@ -1,6 +1,8 @@
 # terraform/dashboard.tf
 
 resource "google_monitoring_dashboard" "todo_app_overview" {
+  count = var.enable_slos ? 1 : 0
+  
   dashboard_json = jsonencode({
     displayName = "Todo App - System Overview"
     
@@ -34,7 +36,7 @@ resource "google_monitoring_dashboard" "todo_app_overview" {
                 {
                   timeSeriesQuery = {
                     timeSeriesFilter = {
-                      filter = "select_slo_burn_rate(\"${google_monitoring_slo.availability.id}\", 3600s)"
+                      filter = "select_slo_burn_rate(\"${google_monitoring_slo.availability[0].id}\", 3600s)"
                       aggregation = {
                         alignmentPeriod  = "60s"
                         perSeriesAligner = "ALIGN_MEAN"
@@ -607,5 +609,5 @@ resource "google_monitoring_dashboard" "todo_app_overview" {
 # Output the dashboard URL
 output "dashboard_url" {
   description = "URL to the custom monitoring dashboard"
-  value       = "https://console.cloud.google.com/monitoring/dashboards/custom/${google_monitoring_dashboard.todo_app_overview.id}?project=${var.project_id}"
+  value       = var.enable_slos ? "https://console.cloud.google.com/monitoring/dashboards/custom/${google_monitoring_dashboard.todo_app_overview[0].id}?project=${var.project_id}" : ""
 }
