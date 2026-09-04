@@ -18,10 +18,10 @@ jobs:
       id-token: write
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v7
       with:
         go-version: '1.27.x'  # keep in sync with the Dockerfile builder (golang:1.27-alpine)
 
@@ -36,7 +36,7 @@ jobs:
       run: go test -tags chaos -v ./test/chaos/...
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@v4
 
     - name: Build Docker image
       run: |
@@ -57,7 +57,7 @@ jobs:
     - name: Google Auth
       if: steps.check-creds.outputs.has_creds == 'true'
       id: auth
-      uses: google-github-actions/auth@v2
+      uses: google-github-actions/auth@v3
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
         workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
@@ -65,7 +65,7 @@ jobs:
 
     - name: Set up Cloud SDK
       if: steps.check-creds.outputs.has_creds == 'true'
-      uses: google-github-actions/setup-gcloud@v2
+      uses: google-github-actions/setup-gcloud@v3
 
     - name: Get Project ID
       if: steps.check-creds.outputs.has_creds == 'true'
@@ -90,7 +90,7 @@ jobs:
 
     - name: Install Cosign
       if: steps.check-creds.outputs.has_creds == 'true'
-      uses: sigstore/cosign-installer@v3.5.0
+      uses: sigstore/cosign-installer@v4.1.2
 
     - name: Sign image with a keyless signature
       if: steps.check-creds.outputs.has_creds == 'true'
@@ -111,10 +111,10 @@ jobs:
     needs: build
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: '1.27.x'  # keep in sync with the Dockerfile builder (golang:1.27-alpine)
 
@@ -124,7 +124,15 @@ jobs:
           gosec -exclude-generated -tests=false -exclude=G115,G706 ./...
 
       - name: Install and run Trivy vulnerability scanner
+        env:
+          # Pin the scanner so security_scan is reproducible: an unpinned Trivy
+          # can change behaviour (or drop flags) between runs with no repo change.
+          # The vulnerability DB is still fetched fresh at scan time, so newly
+          # published CVEs are still detected.
+          TRIVY_VERSION: v0.74.0
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          curl -sfL "https://raw.githubusercontent.com/aquasecurity/trivy/${TRIVY_VERSION}/contrib/install.sh" \
+            | sh -s -- -b /usr/local/bin "${TRIVY_VERSION}"
+          trivy --version
           trivy fs --exit-code 1 --ignore-unfixed --pkg-types os,library --severity CRITICAL,HIGH --ignorefile .trivyignore --format table .
 
