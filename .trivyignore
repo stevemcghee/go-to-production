@@ -1,5 +1,8 @@
-# golang.org/x/crypto/ssh/agent vulnerabilities — this project does not use SSH.
-# These are transitive dependencies only. Update golang.org/x/crypto when feasible.
-CVE-2025-47913
-CVE-2025-47914
-CVE-2025-58181
+# Intentionally empty.
+#
+# The golang.org/x/crypto/ssh/agent suppressions that used to live here
+# (CVE-2025-47913, CVE-2025-47914, CVE-2025-58181) were resolved by the
+# upgrade to golang.org/x/crypto v0.55.0 and have been removed.
+#
+# Keep this file present: .github/workflows/build-test.yml passes
+# `--ignorefile .trivyignore` to Trivy.
