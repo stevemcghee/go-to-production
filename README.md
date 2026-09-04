@@ -205,7 +205,7 @@ This project currently costs approximately **$30.00 / day** to run in its fully 
 
 ## Technologies
 
-*   **Language**: Go 1.24 (standard library `net/http`)
+*   **Language**: Go 1.25+ (standard library `net/http`)
 *   **Database**: PostgreSQL (Cloud SQL HA + read replica)
 *   **Infrastructure**: Terraform, GKE, Kustomize
 *   **Deployment**: ArgoCD (GitOps), Argo Rollouts (canary)
