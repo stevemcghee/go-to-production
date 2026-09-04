@@ -28,10 +28,25 @@ docs/                    # Milestone docs, runbook, strategy, testing guide
 
 ## Language & Build
 
-- **Go 1.24.4** — standard library `net/http`, no web framework.
+- **Go 1.25** — standard library `net/http`, no web framework.
+  `go.mod` declares `go 1.25.0`: that is the *minimum* language version, not the
+  toolchain. CI and the Docker builder both compile with **Go 1.27**.
 - Build: `CGO_ENABLED=0 GOOS=linux go build -o server .`
 - Tests: `go test -v ./...` (unit + integration + chaos).
-- Docker: multi-stage (`golang:1.25-alpine` → `alpine:latest`).
+- Docker: multi-stage (`golang:1.27-alpine` → `alpine:latest`).
+
+**Go version policy** — three places reference a Go version; keep them consistent:
+
+| Location | Meaning | Current |
+|----------|---------|---------|
+| `go.mod` `go` directive | minimum language version we support | `1.25.0` |
+| `Dockerfile` builder | toolchain that builds the shipped binary | `golang:1.27-alpine` |
+| `.github/workflows/build-test.yml` `go-version` | toolchain CI builds/tests with | `1.27.x` |
+
+The workflow pin must track the Dockerfile so CI tests on the toolchain that ships.
+Never pin CI *below* the `go.mod` directive — it still "works" via `GOTOOLCHAIN=auto`
+silently downloading a newer toolchain, which hides the mismatch and costs a download
+every run. Raise the `go` directive only when a dependency actually requires it.
 
 ## Conventions
 

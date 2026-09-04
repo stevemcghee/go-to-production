@@ -3,6 +3,8 @@
 # See the LICENSE file for details.
 
 # Stage 1: Build the Go application
+# Keep this tag in sync with go-version in .github/workflows/build-test.yml,
+# so CI tests on the same toolchain that builds the shipped binary.
 FROM golang:1.27-alpine AS builder
 
 ARG TARGETOS
