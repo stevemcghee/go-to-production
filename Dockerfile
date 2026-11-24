@@ -22,20 +22,19 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} go build -o /main .
 
 # Stage 2: Create the final image
-FROM alpine:latest
+# Distroless static: no shell, no package manager, includes CA certs and tzdata.
+# The binary is built with CGO_ENABLED=0, so it needs nothing else.
+# The :nonroot tag runs as UID/GID 65532.
+FROM gcr.io/distroless/static-debian12:nonroot
 
 WORKDIR /app
-
-RUN apk add --no-cache curl && \
-    addgroup -S appgroup && \
-    adduser -S appuser -G appgroup
-
-USER appuser
 
 COPY --from=builder /main .
 COPY templates ./templates
 COPY static ./static
 
+USER nonroot:nonroot
+
 EXPOSE 8080
 
-CMD ["/app/main"]
+ENTRYPOINT ["/app/main"]
